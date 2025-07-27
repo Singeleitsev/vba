@@ -1,0 +1,558 @@
+'For both 32 bit & 64 bit
+Option Explicit
+
+'WinMain
+Declare PtrSafe Function GetModuleHandleW Lib "Kernel32" (ByVal lpModuleName As LongPtr) As LongPtr
+Declare PtrSafe Function LoadIconW Lib "User32" (ByVal hInstance As LongPtr, ByVal lpIconName As LongPtr) As LongPtr
+Declare PtrSafe Function LoadCursorW Lib "User32" (ByVal hInstance As LongPtr, ByVal lpCursorName As LongPtr) As LongPtr
+Declare PtrSafe Function GetStockObject Lib "Gdi32" (ByVal i As LongPtr) As LongPtr
+Declare PtrSafe Function RegisterClassExW Lib "User32" (ByVal lpWndClass As LongPtr) As LongPtr
+Declare PtrSafe Function CreateWindowExW Lib "User32" (ByVal dwExStyle As LongPtr, ByVal lpClassName As LongPtr, ByVal lpWindowName As LongPtr, ByVal dwStyle As LongPtr, ByVal x As LongPtr, ByVal y As LongPtr, ByVal nWidth As LongPtr, ByVal nHeight As LongPtr, ByVal hWndParent As LongPtr, ByVal hMenu As LongPtr, ByVal hInstance As LongPtr, ByVal lpParam As LongPtr) As LongPtr
+Declare PtrSafe Function ShowWindow Lib "User32" (ByVal hWnd As LongPtr, ByVal nCmdShow As LongPtr) As LongPtr
+Declare PtrSafe Function UpdateWindow Lib "User32" (ByVal hWnd As LongPtr) As LongPtr
+Declare PtrSafe Function PeekMessageW Lib "User32" (ByVal lpMsg As LongPtr, ByVal hWnd As LongPtr, ByVal wMsgFilterMin As LongPtr, ByVal wMsgFilterMax As LongPtr, ByVal wRemoveMsg As LongPtr) As LongPtr
+Declare PtrSafe Function TranslateMessage Lib "User32" (ByVal lpMsg As LongPtr) As LongPtr
+Declare PtrSafe Function DispatchMessageW Lib "User32" (ByVal lpMsg As LongPtr) As LongPtr
+Declare PtrSafe Function GetLastError Lib "Kernel32" () As LongPtr
+'WndProc
+Declare PtrSafe Function MessageBoxW Lib "User32" (ByVal hWnd As LongPtr, ByVal lpText As LongPtr, ByVal lpCaption As LongPtr, ByVal uType As LongPtr) As LongPtr
+Declare PtrSafe Function DefWindowProcW Lib "User32" (ByVal hWnd As LongPtr, ByVal MSG As LongPtr, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
+Declare PtrSafe Function DestroyWindow Lib "User32" (ByVal hWnd As LongPtr) As LongPtr
+Declare PtrSafe Function PostQuitMessage Lib "User32" (ByVal nExitCode As LongPtr) As LongPtr
+'GDI & Paint
+Declare PtrSafe Function GetDC Lib "User32" (ByVal hdc As LongPtr) As LongPtr
+Declare PtrSafe Function ReleaseDC Lib "User32" (ByVal hWnd As LongPtr, ByVal hdc As LongPtr) As LongPtr
+Declare PtrSafe Function DeleteDC Lib "Gdi32" (ByVal hdc As LongPtr) As LongPtr
+Declare PtrSafe Function BeginPaint Lib "User32" (ByVal hWnd As LongPtr, ByVal lpPaint As LongPtr) As LongPtr
+Declare PtrSafe Function EndPaint Lib "User32" (ByVal hWnd As LongPtr, ByVal lpPaint As LongPtr) As LongPtr
+Declare PtrSafe Function GetClientRect Lib "User32" (ByVal hWnd As LongPtr, ByVal lpRect As LongPtr) As LongPtr
+Declare PtrSafe Function InvalidateRect Lib "User32" (ByVal hWnd As LongPtr, ByVal lpRect As LongPtr, ByVal bErase As LongPtr) As LongPtr
+'OpenGL
+Declare PtrSafe Function ChoosePixelFormat Lib "Gdi32" (ByVal hdc As LongPtr, ByVal ppfd As LongPtr) As LongPtr
+Declare PtrSafe Function SetPixelFormat Lib "Gdi32" (ByVal hdc As LongPtr, ByVal format As LongPtr, ByVal ppfd As LongPtr) As LongPtr
+Declare PtrSafe Function SwapBuffers Lib "Gdi32" (ByVal hdc As LongPtr) As LongPtr
+Declare PtrSafe Function wglCreateContext Lib "Opengl32" (ByVal hdc As LongPtr) As LongPtr
+Declare PtrSafe Function wglMakeCurrent Lib "Opengl32" (ByVal hdc As LongPtr, ByVal hGLRC As LongPtr) As LongPtr
+Declare PtrSafe Function wglDeleteContext Lib "Opengl32" (ByVal hGLRC As LongPtr) As LongPtr
+Declare PtrSafe Function glViewport Lib "Opengl32" (ByVal x As LongPtr, ByVal y As LongPtr, ByVal width As LongPtr, ByVal height As LongPtr) As LongPtr
+Declare PtrSafe Function glMatrixMode Lib "Opengl32" (ByVal mode As LongPtr) As LongPtr
+Declare PtrSafe Function glLoadIdentity Lib "Opengl32" () As LongPtr
+Declare PtrSafe Function glClearColor Lib "Opengl32" (ByVal red As Single, ByVal green As Single, ByVal blue As Single, ByVal alpha As Single) As LongPtr
+Declare PtrSafe Function glClear Lib "Opengl32" (ByVal mask As LongPtr) As LongPtr
+Declare PtrSafe Function glBegin Lib "Opengl32" (ByVal mode As LongPtr) As LongPtr
+Declare PtrSafe Function glEnd Lib "Opengl32" () As LongPtr
+Declare PtrSafe Function glTranslatef Lib "Opengl32" (ByVal x As Single, ByVal y As Single, ByVal z As Single) As LongPtr
+Declare PtrSafe Function glRotatef Lib "Opengl32" (ByVal angle As Single, ByVal x As Single, ByVal y As Single, ByVal z As Single) As LongPtr
+Declare PtrSafe Function glColor3f Lib "Opengl32" (ByVal red As Single, ByVal green As Single, ByVal blue As Single) As LongPtr
+Declare PtrSafe Function glVertex3f Lib "Opengl32" (ByVal x As Single, ByVal y As Single, ByVal z As Single) As LongPtr
+Declare PtrSafe Function gluPerspective Lib "Glu32" (ByVal fovy As Double, ByVal aspect As Double, ByVal zNear As Double, ByVal zFar As Double) As LongPtr
+Declare PtrSafe Function gluLookAt Lib "Glu32" (ByVal eyex As Double, ByVal eyey As Double, ByVal eyez As Double, ByVal centerx As Double, ByVal centery As Double, ByVal centerz As Double, ByVal upx As Double, ByVal upy As Double, ByVal upz As Double) As LongPtr
+
+'Structures
+'WNDCLASSEX wcx;
+Type WNDCLASSEX
+    cbSize As Long 'Stack Top
+    style As Long
+    lpfnWndProc As LongPtr
+    cbClsExtra As Long
+    cbWndExtra As Long
+    hInstance As LongPtr
+    hIcon As LongPtr
+    hCursor As LongPtr
+    hbrBackground As LongPtr
+    lpszMenuName As LongPtr
+    lpszClassName As LongPtr
+    hIconSm As LongPtr 'Stack Bottom
+End Type
+Public wcx As WNDCLASSEX
+Public lpWndClass As LongPtr 'Pointer
+'POINT pt
+Type POINT2D
+    x As Long 'Stack Top
+    y As Long 'Stack Bottom
+End Type
+Public pt As POINT2D
+Public lpMsgPt As LongPtr
+'MSG msg;
+Type MSG
+    hWnd As LongPtr 'Stack Top
+    message As Long
+    wParam As LongPtr
+    lParam As LongPtr
+    time As Long
+    pt As POINT2D
+    lPrivate As LongPtr 'Stack Bottom
+End Type
+Public wmsg As MSG
+Public lpMsg As LongPtr 'Pointer
+'RECT rct
+Type RECT
+    left As Long 'Stack Top
+    top As Long
+    right As Long
+    bottom As Long 'Stack Bottom
+End Type
+Public RectMain As RECT
+Public lpRectMain As LongPtr 'Pointer
+Public RectWidth As LongPtr
+Public RectHeight As LongPtr
+Public RectAspect As LongPtr
+'PAINTSTRUCT ps
+Type PAINTSTRUCT
+    hdc As LongPtr 'Stack Top
+    fErase As Long
+    rcPaint As RECT
+    fRestore As Long
+    fIncUpdate As Long
+    rgbReserved(31) As Byte 'Stack Bottom
+End Type
+Public ps As PAINTSTRUCT
+Public lpPS As LongPtr 'Pointer
+'PIXELFORMATDESCRIPTOR pfd = { 0 };
+Type PIXELFORMATDESCRIPTOR
+    nSize As Integer 'Stack Top
+    nVersion As Integer
+    dwFlags As Long
+    iPixelType As Byte
+    cColorBits As Byte
+    cRedBits As Byte
+    cRedShift As Byte
+    cGreenBits As Byte
+    cGreenShift As Byte
+    cBlueBits As Byte
+    cBlueShift As Byte
+    cAlphaBits As Byte
+    cAlphaShift As Byte
+    cAccumBits As Byte
+    cAccumRedBits As Byte
+    cAccumGreenBits As Byte
+    cAccumBlueBits As Byte
+    cAccumAlphaBits As Byte
+    cDepthBits As Byte
+    cStencilBits As Byte
+    cAuxBuffers As Byte
+    iLayerType As Byte
+    bReserved As Byte
+    dwLayerMask As Long
+    dwVisibleMask As Long
+    dwDamageMask As Long 'Stack Bottom
+End Type
+Public pfd As PIXELFORMATDESCRIPTOR
+Public lpPFD As LongPtr 'Pointer
+
+'Const
+Public Const PM_REMOVE = 1
+'Window Styles
+Public Const CS_VREDRAW = 1
+Public Const CS_HREDRAW = 2
+Public Const CS_DBLCLKS = 8
+Public Const IDI_APPLICATION = 32512
+Public Const IDC_ARROW = 32512
+Public Const CW_USEDEFAULT = &H80000000
+Public Const WS_OVERLAPPED = 0
+Public Const WS_CAPTION = &HC00000
+Public Const WS_SYSMENU = &H80000
+Public Const WS_THICKFRAME = &H40000
+Public Const WS_MINIMIZEBOX = &H20000
+Public Const WS_MAXIMIZEBOX = &H10000
+Public Const WS_OVERLAPPEDWINDOW = WS_OVERLAPPED Or WS_CAPTION Or WS_SYSMENU Or WS_THICKFRAME Or WS_MINIMIZEBOX Or WS_MAXIMIZEBOX
+Public Const WS_VISIBLE = &H10000000
+Public Const WS_CHILD = &H40000000
+Public Const SW_SHOW = 5
+'Messages
+Public Const WM_DESTROY = 2
+Public Const WM_SIZE = 5
+Public Const WM_PAINT = 15
+Public Const WM_CLOSE = &H10
+Public Const WM_QUIT = &H12
+Public Const WM_NCHITTEST = &H84
+Public Const WM_KEYDOWN = &H100 'Does not work
+Public Const WM_KEYUP = &H101
+'Virtual Keys
+Public Const MB_OK = 0
+Public Const MB_YESNO = 4
+Public Const MB_ICONQUESTION = &H20
+Public Const MB_ICONINFORMATION = &H40
+Public Const IDYES = 6
+Public Const IDNO = 7
+Public Const VK_SHIFT = &H10
+Public Const VK_ESCAPE = &H1B
+Public Const VK_SPACE = &H20
+'Brushes
+Public Const GRAY_BRUSH = 2
+'OpenGL
+Public Const PFD_SUPPORT_OPENGL = &H20
+Public Const PFD_DOUBLEBUFFER = 1
+Public Const PFD_DRAW_TO_WINDOW = 4
+Public Const PFD_TYPE_RGBA = 0
+Public Const PFD_MAIN_PLANE = 0
+Public Const GL_MODELVIEW = &H1700
+Public Const GL_PROJECTION = &H1701
+Public Const GL_COLOR_BUFFER_BIT = &H4000
+Public Const GL_DEPTH_BUFFER_BIT = &H100
+Public Const GL_LINES = 1
+Public Const GL_TRIANGLES = 4
+Public Const GL_TRIANGLE_STRIP = 5
+Public Const GL_QUADS = 7
+Public Const GL_QUAD_STRIP = 8
+'Custom Values
+'Screen
+Public Const DEFAULT_SCREEN_WIDTH = 1024
+Public Const DEFAULT_SCREEN_HEIGHT = 768
+
+'Global Handles
+Public ghInst As LongPtr
+Public ghWnd As LongPtr
+
+'OpenGL
+Public ghDC As LongPtr
+Public ghRC As LongPtr
+Public iPixelFormat As LongPtr
+
+'Model Position
+Public dX As Single
+Public dY As Single
+Public dZ As Single
+'Model Angles
+Public aXY As Single
+Public aYZ As Single
+'Camera
+Public xCam As Double
+Public yCam As Double
+Public zCam As Double
+Public xAim As Double
+Public yAim As Double
+Public zAim As Double
+
+'Keyboard Buffer
+Public key(127) As Boolean
+Public nKeyCode As Integer
+
+'Strings
+Public szCaption As String
+Public lpszCaption As LongPtr
+Public szMsgText As String
+Public lpszMsgText As LongPtr
+Public szMsgTitle As String
+Public lpszMsgTitle As LongPtr
+
+'Debug
+Public nLastError As LongPtr
+
+Sub SetButton()
+    Dim wshWorkSheet As Worksheet
+    Dim btnStart As Button
+    Dim r As Range
+ 
+    Set wshWorkSheet = ActiveSheet
+    wshWorkSheet.Buttons.Delete
+    
+    Set r = wshWorkSheet.Cells(2, 2)
+    Set btnStart = wshWorkSheet.Buttons.Add(r.left, r.top, r.width, r.height)
+    With btnStart
+        .OnAction = "Start"
+        .Caption = "Start"
+        .Name = "Start"
+    End With
+End Sub
+
+Sub Start()
+    Call WinMain(0, 0, 0, 0)
+End Sub
+
+Function WinMain(ByVal hInstance As LongPtr, ByVal hPrevInstance As LongPtr, ByVal lpCmdLine As LongPtr, ByVal nCmdShow As LongPtr)
+'Main Cycle
+    Dim nPeek As LongPtr
+'Debug
+    Dim nWndClass As LongPtr 'For Debug Purpose
+
+'Pointers
+    lpWndClass = VarPtr(wcx.cbSize)
+    lpMsg = VarPtr(wmsg.hWnd)
+
+    wcx.cbSize = Len(wcx) '48 bytes for x32, 80 bytes for x64
+    wcx.style = CS_HREDRAW Or CS_VREDRAW Or CS_DBLCLKS
+    wcx.lpfnWndProc = GetAddr(AddressOf WndProc)
+    wcx.cbClsExtra = 0
+    wcx.cbWndExtra = 0
+    wcx.hInstance = GetModuleHandleW(0)
+    If wcx.hInstance = 0 Then
+        Call MsgBox("GetModuleHandle Error: " & GetLastError())
+        Exit Function
+    Else
+        ghInst = wcx.hInstance
+    End If
+    wcx.hIcon = LoadIconW(0, IDI_APPLICATION)
+    wcx.hCursor = LoadCursorW(0, IDC_ARROW)
+    wcx.hbrBackground = GetStockObject(GRAY_BRUSH)
+    wcx.lpszMenuName = 0
+    wcx.lpszClassName = StrPtr("MainWindowClassName")
+    wcx.hIconSm = wcx.hIcon
+
+    nWndClass = RegisterClassExW(lpWndClass)
+    If nWndClass = 0 Then
+        nLastError = GetLastError()
+        If nLastError = 1410 Then
+            'Call MsgBox("RegisterClass Error 1410 (0x582): ERROR_CLASS_ALREADY_EXISTS")
+        Else
+            Call MsgBox("RegisterClass Error: " & nLastError)
+            Exit Function
+        End If
+    End If
+
+    szCaption = "VBA WinAPI OpenGL Demo"
+    lpszCaption = StrPtr(szCaption)
+    ghWnd = CreateWindowExW(0, wcx.lpszClassName, lpszCaption, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT, 0, 0, wcx.hInstance, 0)
+    If ghWnd = 0 Then
+        Call MsgBox("CreateWindow Error: " & GetLastError())
+        Exit Function
+    End If
+
+    Call InitializeGL
+
+    Call ShowWindow(ghWnd, SW_SHOW)
+    Call UpdateWindow(ghWnd)
+    
+WinMainLoop:
+    nPeek = PeekMessageW(lpMsg, 0, 0, 0, PM_REMOVE)
+    If nPeek = 0 Then
+        Call DrawGLScene 'We'll draw the OpenGL Scene outside the WndProc
+    Else
+        If wmsg.message = WM_QUIT Then
+            WinMain = wmsg.wParam
+            Exit Function 'Don't use Call ExitProcess(0)
+        Else
+            Call TranslateMessage(lpMsg)
+            Call DispatchMessageW(lpMsg)
+        End If
+    End If
+    GoTo WinMainLoop
+End Function
+
+Function WndProc(ByVal hWnd As LongPtr, ByVal message As LongPtr, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
+'Pointers
+    lpRectMain = VarPtr(RectMain.left)
+    lpPS = VarPtr(ps.hdc)
+
+Select Case message
+    Case WM_PAINT
+        GoTo lbl_wmPaint
+    Case WM_KEYDOWN
+        GoTo lbl_wmKeyDown
+    Case WM_KEYUP
+        GoTo lbl_wmKeyUp
+    Case WM_SIZE
+        GoTo lbl_wmSize
+    Case WM_CLOSE
+        GoTo lbl_wmClose
+    Case WM_DESTROY
+        GoTo lbl_wmDestroy
+End Select
+
+lbl_DefWndProc:
+    WndProc = DefWindowProcW(hWnd, message, wParam, lParam)
+    Exit Function
+
+lbl_wmSize:
+    Call GetClientRect(hWnd, lpRectMain)
+    RectWidth = RectMain.right - RectMain.left
+    RectHeight = RectMain.bottom - RectMain.top
+    If RectHeight > 0 Then
+        RectAspect = RectWidth / RectHeight
+    End If
+    Call GLResize
+    GoTo lbl_WndProc_Return0
+
+lbl_wmPaint:
+    Call BeginPaint(hWnd, lpPS)
+    Call EndPaint(hWnd, lpPS)
+    GoTo lbl_WndProc_Return0
+
+lbl_wmKeyDown:
+    nKeyCode = CInt(wParam And 32767) 'Low Word, Signed Integer
+    key(nKeyCode) = 1
+    Select Case nKeyCode
+'Rotation of the Camera
+    Case &H25 'Left Arrow
+        xCam = xCam + 0.01
+        xAim = xAim + 0.01
+        Call CameraMove
+    Case &H26 'Up Arrow
+        yCam = yCam - 0.01
+        yAim = yAim - 0.01
+        Call CameraMove
+    Case &H27 'Right Arrow
+        xCam = xCam - 0.01
+        xAim = xAim - 0.01
+        Call CameraMove
+    Case &H28 'Down Arrow
+        yCam = yCam + 0.01
+        yAim = yAim + 0.01
+        Call CameraMove
+'Rotation of the Object
+    Case &H41 'A - Rotate Counter-Clockwise
+        aXY = aXY - 5
+        Call CameraMove
+    Case &H44 'D - Rotate Clockwise
+        aXY = aXY + 5
+        Call CameraMove
+    Case &H53 'S - Rotate Forward
+        aYZ = aYZ + 5
+        Call CameraMove
+    Case &H57 'W - Rotate Backward
+        aYZ = aYZ - 5
+        Call CameraMove
+'Reset The Camera
+    Case &H20 'SpaceBar
+        Call ResetScene
+    Case &H1B 'Esc
+        GoTo lbl_wmClose
+    End Select
+    GoTo lbl_WndProc_Return0
+
+lbl_wmKeyUp:
+    nKeyCode = CInt(wParam And 32767) 'Low Word, Signed Integer
+    key(nKeyCode) = 0
+    'MsgBox ("KeyUp: " & nKeyCode)
+    GoTo lbl_WndProc_Return0
+
+lbl_wmClose:
+    szMsgText = "Close?"
+    lpszMsgText = StrPtr(szMsgText)
+    szMsgTitle = "Such A Good Application"
+    lpszMsgTitle = StrPtr(szMsgTitle)
+    If MessageBoxW(hWnd, lpszMsgText, lpszMsgTitle, MB_YESNO Or MB_ICONQUESTION) = IDYES Then
+        Call wglMakeCurrent(0, 0)
+        Call wglDeleteContext(ghRC)
+        Call ReleaseDC(hWnd, ghDC)
+        Call DestroyWindow(hWnd)
+    End If
+    GoTo lbl_WndProc_Return0
+
+lbl_wmDestroy:
+    Call PostQuitMessage(0)
+lbl_WndProc_Return0:
+    WndProc = 0
+End Function
+
+Function GetAddr(ByVal lpProc As LongPtr) As LongPtr
+    'This Function has been created to fit the 'AddressOf' syntax
+    GetAddr = lpProc
+End Function
+
+Function InitializeGL()
+'PIXELFORMATDESCRIPTOR pfd
+    pfd.nSize = 40 'sizeof( PIXELFORMATDESCRIPTOR )
+    pfd.nVersion = 1 'always 1
+    pfd.dwFlags = PFD_SUPPORT_OPENGL Or PFD_DOUBLEBUFFER Or PFD_DRAW_TO_WINDOW
+    pfd.iPixelType = PFD_TYPE_RGBA
+    pfd.cColorBits = 24
+    pfd.cRedBits = 0
+    pfd.cRedShift = 0
+    pfd.cGreenBits = 0
+    pfd.cGreenShift = 0
+    pfd.cBlueBits = 0
+    pfd.cBlueShift = 0
+    pfd.cAlphaBits = 0
+    pfd.cAlphaShift = 0
+    pfd.cAccumBits = 0
+    pfd.cAccumRedBits = 0
+    pfd.cAccumGreenBits = 0
+    pfd.cAccumBlueBits = 0
+    pfd.cAccumAlphaBits = 0
+    pfd.cDepthBits = 32
+    pfd.cStencilBits = 0
+    pfd.cAuxBuffers = 0
+    pfd.iLayerType = PFD_MAIN_PLANE
+    pfd.bReserved = 0
+    pfd.dwLayerMask = 0
+    pfd.dwVisibleMask = 0
+    pfd.dwDamageMask = 0
+    lpPFD = VarPtr(pfd.nSize)
+
+    ghDC = GetDC(ghWnd)
+
+    iPixelFormat = ChoosePixelFormat(ghDC, lpPFD)
+    If iPixelFormat = 0 Then
+        MsgBox ("ChoosePixelFormat Error: " & GetLastError())
+    End If
+
+    Call SetPixelFormat(ghDC, iPixelFormat, lpPFD)
+
+    ghRC = wglCreateContext(ghDC)
+    If ghRC = 0 Then
+        nLastError = GetLastError()
+        If nLastError = 2000 Then
+            MsgBox ("wglCreateContext Error 2000 (0x7D0): ERROR_INVALID_PIXEL_FORMAT")
+        Else
+            MsgBox ("wglCreateContext Error: " & nLastError)
+        End If
+    End If
+
+    Call wglMakeCurrent(ghDC, ghRC)
+    Call ResetScene
+End Function
+
+Function GLResize()
+    Call glViewport(0, 0, RectWidth, RectHeight)
+End Function
+
+Function ResetScene()
+    Call glMatrixMode(GL_PROJECTION)
+    Call glLoadIdentity
+    Call gluPerspective(45#, RectAspect, 1, 1)
+    dX = 0
+    dY = 0
+    dZ = 0
+    aXY = 0
+    aXY = 0
+    xCam = 0
+    yCam = 0
+    zCam = 0.125
+    xAim = 0
+    yAim = 0
+    zAim = 0
+    Call CameraMove
+End Function
+
+Function CameraMove()
+    Call glMatrixMode(GL_MODELVIEW)
+    Call glLoadIdentity
+    Call glRotatef(aXY, 0, 0, 1)
+    Call glRotatef(aYZ, 1, 0, 0)
+    Call glTranslatef(dX, dY, dZ)
+    Call glMatrixMode(GL_PROJECTION)
+    Call glLoadIdentity
+    Call gluLookAt(xCam, yCam, zCam, xAim, yAim, zAim, 0, 1, 0)
+End Function
+
+Function DrawGLScene()
+    Call glClear(GL_COLOR_BUFFER_BIT Or GL_DEPTH_BUFFER_BIT)
+
+    Call DrawSb11
+
+    Call SwapBuffers(ghDC)
+End Function
+
+Function DrawSb11()
+    Call glColor3f(0.5, 0.5, 0.5) 'Gray
+    Call glBegin(GL_QUADS)
+        Call glVertex3f(-0.1, -0.1, 0)
+        Call glVertex3f(0.1, -0.1, 0)
+        Call glVertex3f(0.1, 0.1, 0)
+        Call glVertex3f(-0.1, 0.1, 0)
+    Call glEnd
+    Call glBegin(GL_QUAD_STRIP)
+        Call glVertex3f(-0.12, -0.12, -0.02)
+        Call glVertex3f(-0.1, -0.1, 0)
+        Call glVertex3f(0.12, -0.12, -0.02)
+        Call glVertex3f(0.1, -0.1, 0)
+        Call glVertex3f(0.12, 0.12, -0.02)
+        Call glVertex3f(0.1, 0.1, 0)
+        Call glVertex3f(-0.12, 0.12, -0.02)
+        Call glVertex3f(-0.1, 0.1, 0)
+        Call glVertex3f(-0.12, -0.12, -0.02)
+        Call glVertex3f(-0.1, -0.1, 0)
+    Call glEnd
+End Function
+

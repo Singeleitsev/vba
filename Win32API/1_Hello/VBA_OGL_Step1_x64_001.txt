@@ -1,0 +1,27 @@
+'For both 32 bit & 64 bit
+Option Explicit
+
+Declare PtrSafe Function MessageBoxW Lib "User32" (ByVal hWnd As LongPtr, ByVal lpText As LongPtr, ByVal lpCaption As LongPtr, ByVal uType As LongPtr) As LongPtr
+
+'Const
+Public Const MB_OK = 0
+Public Const MB_ICONINFORMATION = &H40
+
+'Strings
+Public szMsgText As String
+Public lpszMsgText As LongPtr
+Public szMsgTitle As String
+Public lpszMsgTitle As LongPtr
+
+Sub Start()
+    Call HelloWorldMessageProc
+End Sub
+
+Sub HelloWorldMessageProc()
+    szMsgTitle = "VBA WinAPI Demo"
+    lpszMsgTitle = StrPtr(szMsgTitle)
+    szMsgText = "Hello World"
+    lpszMsgText = StrPtr(szMsgText)
+    Call MessageBoxW(0, lpszMsgText, lpszMsgTitle, MB_OK Or MB_ICONINFORMATION)
+End Sub
+
