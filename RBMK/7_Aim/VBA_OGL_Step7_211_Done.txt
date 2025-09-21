@@ -1,4 +1,3 @@
-Attribute VB_Name = "Module1"
 'For 32 bit & 64 bit
 Option Explicit
 
@@ -12,27 +11,30 @@ Declare PtrSafe Function CreateWindowExW Lib "User32" (ByVal dwExStyle As LongPt
 Declare PtrSafe Function ShowWindow Lib "User32" (ByVal hWnd As LongPtr, ByVal nCmdShow As LongPtr) As LongPtr
 Declare PtrSafe Function UpdateWindow Lib "User32" (ByVal hWnd As LongPtr) As LongPtr
 Declare PtrSafe Function PeekMessageW Lib "User32" (ByVal lpMsg As LongPtr, ByVal hWnd As LongPtr, ByVal wMsgFilterMin As LongPtr, ByVal wMsgFilterMax As LongPtr, ByVal wRemoveMsg As LongPtr) As LongPtr
+Declare PtrSafe Function TranslateAcceleratorW Lib "User32" (ByVal hWnd As LongPtr, ByVal hAccTable As LongPtr, ByVal lpMsg As LongPtr) As LongPtr
 Declare PtrSafe Function TranslateMessage Lib "User32" (ByVal lpMsg As LongPtr) As LongPtr
 Declare PtrSafe Function DispatchMessageW Lib "User32" (ByVal lpMsg As LongPtr) As LongPtr
 Declare PtrSafe Function SendMessageW Lib "User32" (ByVal hWnd As LongPtr, ByVal Msg As LongPtr, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
 Declare PtrSafe Function GetLastError Lib "Kernel32" () As LongPtr
 'WndProc
 Declare PtrSafe Function MessageBoxW Lib "User32" (ByVal hWnd As LongPtr, ByVal lpText As LongPtr, ByVal lpCaption As LongPtr, ByVal uType As LongPtr) As LongPtr
+Declare PtrSafe Function SetFocus Lib "User32" (ByVal hWnd As LongPtr) As LongPtr
 Declare PtrSafe Function GetCursorPos Lib "User32" (ByVal lpPoint As LongPtr) As LongPtr
-Declare PtrSafe Function SetCursorPos Lib "User32" (ByVal X As LongPtr, ByVal Y As LongPtr) As LongPtr
 Declare PtrSafe Function DefWindowProcW Lib "User32" (ByVal hWnd As LongPtr, ByVal Msg As LongPtr, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
 Declare PtrSafe Function DestroyWindow Lib "User32" (ByVal hWnd As LongPtr) As LongPtr
 Declare PtrSafe Function PostQuitMessage Lib "User32" (ByVal nExitCode As LongPtr) As LongPtr
-'StatusBar
-Declare PtrSafe Function InitCommonControlsEx Lib "Comctl32" (ByVal picce As LongPtr) As LongPtr
 'PopupMenu
 Declare PtrSafe Function CreateMenu Lib "User32" () As LongPtr
 Declare PtrSafe Function CreatePopupMenu Lib "User32" () As LongPtr
 Declare PtrSafe Function SetMenu Lib "User32" (ByVal hWnd As LongPtr, ByVal hMenu As LongPtr) As LongPtr
 Declare PtrSafe Function DrawMenuBar Lib "User32" (ByVal hWnd As LongPtr) As LongPtr
 Declare PtrSafe Function AppendMenuW Lib "User32" (ByVal hMenu As LongPtr, ByVal uFlags As LongPtr, ByVal uIDNewItem As LongPtr, ByVal lpNewItem As LongPtr) As LongPtr
-Declare PtrSafe Function CheckMenuItem Lib "User32" (ByVal hMenu As LongPtr, ByVal uIDCheckItem As LongPtr, ByVal uCheck As LongPtr) As LongPtr
+'Declare PtrSafe Function CheckMenuItem Lib "User32" (ByVal hMenu As LongPtr, ByVal uIDCheckItem As LongPtr, ByVal uCheck As LongPtr) As LongPtr
+Declare PtrSafe Function CreateAcceleratorTableW Lib "User32" (ByVal paccel As LongPtr, ByVal cAccel As LongPtr) As LongPtr
+Declare PtrSafe Function DestroyAcceleratorTable Lib "User32" (ByVal hAccel As LongPtr) As LongPtr
 'Declare PtrSafe Function DestroyMenu Lib "User32" (ByVal hMenu As LongPtr) As LongPtr
+'StatusBar
+Declare PtrSafe Function InitCommonControlsEx Lib "Comctl32" (ByVal picce As LongPtr) As LongPtr
 'GDI & Paint
 Declare PtrSafe Function GetDC Lib "User32" (ByVal hdc As LongPtr) As LongPtr
 Declare PtrSafe Function ReleaseDC Lib "User32" (ByVal hWnd As LongPtr, ByVal hdc As LongPtr) As LongPtr
@@ -144,6 +146,15 @@ Type PIXELFORMATDESCRIPTOR
 End Type
 Public pfd As PIXELFORMATDESCRIPTOR
 Public lpPFD As LongPtr 'Pointer
+'ACCEL accel;
+Type ACCELSTRUCT
+    fVirt As Integer
+    'dummy As Byte
+    key As Integer
+    cmd As Integer
+End Type
+Public accel As ACCELSTRUCT
+Public paccel As LongPtr 'Pointer
 'INITCOMMONCONTROLSEX icce;
 Type ICCESTRUCT
     dwSize As Long
@@ -151,6 +162,7 @@ Type ICCESTRUCT
 End Type
 Public icce As ICCESTRUCT
 Public lpIcce As LongPtr 'Pointer
+
 'Const
 Public Const PM_REMOVE = 1
 'Window Styles
@@ -176,12 +188,21 @@ Public Const SW_SHOW = 5
 Public Const WM_CREATE = 1
 Public Const WM_DESTROY = 2
 Public Const WM_SIZE = 5
+Public Const WM_ACTIVATE = 6
 Public Const WM_CLOSE = &H10
 Public Const WM_QUIT = &H12
 Public Const WM_KEYDOWN = &H100
 Public Const WM_KEYUP = &H101
 Public Const WM_COMMAND = &H111
+Public Const WM_MOUSEMOVE = &H200
 Public Const WM_LBUTTONDOWN = &H201
+Public Const WM_LBUTTONUP = &H202
+Public Const WM_RBUTTONDOWN = &H204
+Public Const WM_RBUTTONUP = &H205
+Public Const WM_MBUTTONDOWN = &H207
+Public Const WM_MBUTTONUP = &H208
+Public Const WM_MBUTTONDBLCLK = &H209
+Public Const WM_MOUSEWHEEL = &H20A
 Public Const WM_USER = &H400
 'Virtual Keys
 Public Const MB_OK = 0
@@ -190,10 +211,12 @@ Public Const MB_ICONQUESTION = &H20
 Public Const MB_ICONINFORMATION = &H40
 Public Const IDYES = 6
 Public Const IDNO = 7
+Public Const VK_TAB = 9
 Public Const VK_RETURN = &HD
 Public Const VK_SHIFT = &H10
 Public Const VK_ESCAPE = &H1B
 Public Const VK_SPACE = &H20
+Public Const VK_F1 = &H70
 'Brushes
 Public Const GRAY_BRUSH = 2
 'Status Bar
@@ -215,6 +238,9 @@ Public Const MF_DISABLED = 2
 Public Const MF_UNCHECKED = 0
 Public Const MF_CHECKED = 8
 Public Const MF_POPUP = &H10
+'Accelerators
+Public Const FVIRTKEY = 1
+Public Const FCONTROL = 8
 'OpenGL
 Public Const PFD_SUPPORT_OPENGL = &H20
 Public Const PFD_DOUBLEBUFFER = 1
@@ -241,8 +267,8 @@ Public Const PI_OVER_180 = 1.74532925199433E-02
 Public Const DEFAULT_SCREEN_WIDTH = 1024
 Public Const DEFAULT_SCREEN_HEIGHT = 768
 'Menu ID's
-Public Const IDM_APP_EXIT = 1009
-Public Const IDM_HELP_ABOUT = 9001
+Public Const IDM_APP_EXIT = &H109
+Public Const IDM_HELP_ABOUT = &H901
 
 'Global Handles
 Public ghInst As LongPtr
@@ -252,12 +278,13 @@ Public hwndStatusBar As LongPtr
 Public idStatusBar As LongPtr
 Public szStatusClassName As String
 Public lpszStatusClassName As LongPtr
-Public xStatusParts(7) As Long 'Divide Status Bar by 8 parts
+Public xStatusParts(8) As Long 'Divide Status Bar by 9 parts
 Public lpStatusParts As LongPtr
 'Menu Handles
 Public hMenu As LongPtr
 Public hMenuFile As LongPtr
 Public hMenuHelp As LongPtr
+Public hAccel As LongPtr
 'Menu Text Strings
 Public szMenuFile As String
 Public szMenuFileExit As String
@@ -275,13 +302,15 @@ Public iPixelFormat As LongPtr
 'Model Scale
 Public GlobalScale As Single
 'Model Angles
+Public aYZ_Model As Single 'Model Tilt
 Public aXY_Model As Single 'Model Turn
+Public aXZ_Model As Single 'Model Roll
 'Camera Position
 Public xCam, yCam, zCam As Double
 'Camera Angles
-Public aYZ_Cam As Single '1 - Side - Camera Tilt
-Public aXY_Cam As Single '2 - Plan - Camera Turn
-Public aXZ_Cam As Single '3 - Front - Camera Roll
+Public aYZ_Cam As Single '1 - Tilt - Side
+Public aXY_Cam As Single '2 - Turn - Plan
+Public aXZ_Cam As Single '3 - Roll - Front
 'Motion
 Public LinearSpeed As Single
 Public LinearBoost As Single
@@ -294,7 +323,14 @@ Public dxCam0, dyCam0, dzCam0  As Single
 Public dxCam1, dyCam1, dzCam1  As Single
 Public dxCam2, dyCam2, dzCam2  As Single
 Public dxCam3, dyCam3, dzCam3  As Single
-
+Public nMouseMode As Integer
+'Cursor Position
+Public xPrevPos, yPrevPos As Integer
+Public xCurPos, yCurPos As Integer
+Public dxMouse, dyMouse As Integer
+'Flags
+Public isNotActive As Long
+Public isRefreshed As Long
 'Keyboard Buffer
 Public key(127) As Byte
 Public nKeyCode As Integer
@@ -311,7 +347,9 @@ Public lpszMsgTitle As LongPtr
 Public sz_xCam As String
 Public sz_yCam As String
 Public sz_zCam As String
+Public sz_aYZ_Model As String
 Public sz_aXY_Model As String
+Public sz_aXZ_Model As String
 Public sz_aYZ_Cam As String
 Public sz_aXY_Cam As String
 Public sz_aXZ_Cam As String
@@ -319,7 +357,9 @@ Public sz_aXZ_Cam As String
 Public lpsz_xCam As LongPtr
 Public lpsz_yCam As LongPtr
 Public lpsz_zCam As LongPtr
+Public lpsz_aYZ_Model As LongPtr
 Public lpsz_aXY_Model As LongPtr
+Public lpsz_aXZ_Model As LongPtr
 Public lpsz_aYZ_Cam As LongPtr
 Public lpsz_aXY_Cam As LongPtr
 Public lpsz_aXZ_Cam As LongPtr
@@ -338,10 +378,10 @@ Function WinMain(ByVal hInstance As LongPtr, ByVal hPrevInstance As LongPtr, ByV
     Dim nWndClass As LongPtr 'For Debug Purpose
 
 'Pointers
-    lpWndClass = VarPtr(wcx.cbSize)
-    lpMsg = VarPtr(wmsg.hWnd)
+    lpWndClass = VarPtr(wcx)
+    lpMsg = VarPtr(wmsg)
 
-    wcx.cbSize = Len(wcx) '30h bytes
+    wcx.cbSize = Len(wcx)
     wcx.style = CS_HREDRAW Or CS_VREDRAW Or CS_DBLCLKS
     wcx.lpfnWndProc = GetAddr(AddressOf WndProc)
     wcx.cbClsExtra = 0
@@ -379,6 +419,7 @@ Function WinMain(ByVal hInstance As LongPtr, ByVal hPrevInstance As LongPtr, ByV
         Exit Function
     End If
 
+    Call InitializeControls
     Call InitializeGL
 
     Call ShowWindow(ghWnd, SW_SHOW)
@@ -386,69 +427,88 @@ Function WinMain(ByVal hInstance As LongPtr, ByVal hPrevInstance As LongPtr, ByV
 
 WinMainLoop:
     nPeek = PeekMessageW(lpMsg, 0, 0, 0, PM_REMOVE)
-    If nPeek = 0 Then
+    If nPeek = 0 And isNotActive = 0 Then
         Call DrawGLScene 'We'll draw the OpenGL Scene outside the WndProc
-    Else
-        If wmsg.message = WM_QUIT Then
-            WinMain = wmsg.wParam
-            Exit Function 'Don't use Call ExitProcess(0)
-        Else
-            Call TranslateMessage(lpMsg)
-            Call DispatchMessageW(lpMsg)
-        End If
+    ElseIf wmsg.message = WM_QUIT Then
+        WinMain = wmsg.wParam
+        Exit Function 'Don't use Call ExitProcess(0)
+    ElseIf TranslateAcceleratorW(ghWnd, hAccel, lpMsg) = 0 Then
+        Call TranslateMessage(lpMsg)
+        Call DispatchMessageW(lpMsg)
     End If
     GoTo WinMainLoop
 End Function
 
 Function WndProc(ByVal hWnd As LongPtr, ByVal message As LongPtr, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
-'Pointers
-    lpRectMain = VarPtr(RectMain.left)
-
 Select Case message
+    Case WM_MOUSEMOVE
+        GoTo lbl_wmMouseMove
     Case WM_KEYDOWN
         GoTo lbl_wmKeyDown
     Case WM_KEYUP
         GoTo lbl_wmKeyUp
+    Case WM_MBUTTONDOWN
+        GoTo lbl_wmMButtonDown
+    Case WM_MBUTTONUP
+        GoTo lbl_wmMButtonUp
     Case WM_LBUTTONDOWN
         GoTo lbl_wmLButtonDown
+    Case WM_LBUTTONUP
+        GoTo lbl_wmLButtonUp
+     Case WM_RBUTTONDOWN
+        GoTo lbl_wmRButtonDown
+    Case WM_RBUTTONUP
+        GoTo lbl_wmRButtonUp
+    Case WM_MBUTTONDBLCLK
+        GoTo lbl_wmMButtonDblClk
+    Case WM_MOUSEWHEEL
+        GoTo lbl_wmMouseWheel
     Case WM_COMMAND
         GoTo lbl_wmCommand
+    Case WM_ACTIVATE
+        GoTo lbl_wmActivate
     Case WM_SIZE
         GoTo lbl_wmSize
     Case WM_CLOSE
         GoTo lbl_wmClose
     Case WM_DESTROY
         GoTo lbl_wmDestroy
-    Case WM_CREATE
-        GoTo lbl_wmCreate
 End Select
 
+'If None of the Above Then Pass to Default
 lbl_DefWndProc:
     WndProc = DefWindowProcW(hWnd, message, wParam, lParam)
     Exit Function
-    
-lbl_wmCreate:
-    Call InitCommonControlsEx(lpIcce)
-    Call DoCreateMenu(hWnd)
-    Call DoCreateStatusBar(hWnd)
+
+'Proceed Received Messages
+lbl_wmSize:
+    RectWidth = CInt(lParam And 32767) 'Low Word, Signed Integer
+    RectHeight = CInt(lParam / 65536) 'High Word
+    Call GLResize
     GoTo lbl_WndProc_Return0
 
-lbl_wmSize:
-    Call GLResize(hWnd)
+lbl_wmActivate:
+    isNotActive = CInt(wParam / 65536) 'High Word
     GoTo lbl_WndProc_Return0
 
 lbl_wmKeyDown:
     nKeyCode = CInt(wParam And 32767) 'Low Word, Signed Integer
     key(nKeyCode) = 1
     Select Case nKeyCode 'For single (not continuous) KeyStrokes
-        Case 9 'Tab
+        Case VK_TAB
             aXY_Model = aXY_Model + 30 'Object Turn Counter-Clockwise 30 degrees
-        Case &HD 'Enter
-            Call AboutProc(hWnd)
-        Case &H20 'SpaceBar
-            Call ResetScene
-        Case &H1B 'Esc
-            Call CloseWndProc(hWnd)
+        Case VK_RETURN 'Enter
+            Call AboutProc
+        Case VK_SPACE
+            Call ReSetView
+        Case VK_ESCAPE
+            If isRefreshed = 0 Then
+                Call ReSetView
+            Else
+                Call CloseWndProc
+            End If
+        Case VK_F1
+            Call AboutProc
         End Select
     GoTo lbl_WndProc_Return0
 
@@ -457,21 +517,84 @@ lbl_wmKeyUp:
     key(nKeyCode) = 0
     GoTo lbl_WndProc_Return0
 
+lbl_wmMouseMove:
+    xCurPos = lParam And 32767 'Low Word, Signed Integer
+    yCurPos = lParam / 65536 'High Word
+    dxMouse = xPrevPos - xCurPos
+    dyMouse = yPrevPos - yCurPos
+    Select Case nMouseMode
+        Case 1 'LButton
+            dxMouse = dxMouse / 32
+            dyMouse = dyMouse / 32
+            aYZ_Cam = CheckAngle(aYZ_Cam + dyMouse)
+            aXY_Cam = CheckAngle(aXY_Cam + dxMouse)
+        Case 2 'MButton
+            dxMouse = dxMouse / 8
+            dyMouse = dyMouse / 2
+            xCam = CheckDistance(xCam - dxMouse)
+            zCam = CheckDistance(zCam + dyMouse)
+        Case 3 'RButton
+            dxMouse = dxMouse / 32
+            dyMouse = dyMouse / 32
+            aYZ_Cam = CheckAngle(aYZ_Cam + dyMouse)
+            aXZ_Cam = CheckAngle(aXZ_Cam + dxMouse)
+        Case Else
+            GoTo lbl_WndProc_Return0
+    End Select
+        xPrevPos = xCurPos
+        yPrevPos = yCurPos
+    GoTo lbl_WndProc_Return0
+
 lbl_wmLButtonDown:
-    Call AboutProc(hWnd)
+    nMouseMode = 1
+    xPrevPos = lParam And 32767 'Low Word, Signed Integer
+    yPrevPos = lParam / 65536 'High Word
+    GoTo lbl_WndProc_Return0
+lbl_wmLButtonUp:
+    nMouseMode = 0
+    GoTo lbl_WndProc_Return0
+
+lbl_wmRButtonDown:
+    nMouseMode = 3
+    xPrevPos = lParam And 32767 'Low Word, Signed Integer
+    yPrevPos = lParam / 65536 'High Word
+    GoTo lbl_WndProc_Return0
+lbl_wmRButtonUp:
+    nMouseMode = 0
+    GoTo lbl_WndProc_Return0
+
+lbl_wmMButtonDown:
+    nMouseMode = 2
+    xPrevPos = lParam And 32767 'Low Word, Signed Integer
+    yPrevPos = lParam / 65536 'High Word
+    GoTo lbl_WndProc_Return0
+lbl_wmMButtonUp:
+    nMouseMode = 0
+    GoTo lbl_WndProc_Return0
+
+lbl_wmMButtonDblClk:
+    Call ReSetView
+    GoTo lbl_WndProc_Return0
+
+lbl_wmMouseWheel:
+    dxCam0 = 0
+    dyCam0 = 0
+    dzCam0 = wParam / 65536 'GET_WHEEL_DELTA_WPARAM(wParam) == HIWORD(wParam) == WHEEL_DELTA == either 120 or (-120)
+    dzCam0 = dzCam0 / 60 'Set Speed = 120/60 = 2
+    Call CameraMove
     GoTo lbl_WndProc_Return0
 
 lbl_wmCommand:
-    Select Case wParam
+    Select Case CInt(wParam And 32767) 'Low Word, Signed Integer
         Case IDM_APP_EXIT
-            Call CloseWndProc(hWnd)
+            Call CloseWndProc
         Case IDM_HELP_ABOUT
-            Call AboutProc(hWnd)
+            Call AboutProc
     End Select
     GoTo lbl_WndProc_Return0
 
 lbl_wmClose:
-    Call CloseWndProc(hWnd)
+    Call CloseWndProc
     GoTo lbl_WndProc_Return0
 
 lbl_wmDestroy:
@@ -485,7 +608,14 @@ Function GetAddr(ByVal lpProc As LongPtr) As LongPtr
     GetAddr = lpProc
 End Function
 
-Function DoCreateMenu(ByVal hWnd As LongPtr)
+Function InitializeControls()
+    nMouseMode = 0
+    Call InitCommonControlsEx(lpIcce)
+    Call DoCreateMenu
+    Call DoCreateStatusBar
+End Function
+
+Function DoCreateMenu()
 'Menu Text  Strings
     szMenuFile = "&File"
     szMenuFileExit = "E&xit" + vbTab + "Ctrl+W"
@@ -496,7 +626,6 @@ Function DoCreateMenu(ByVal hWnd As LongPtr)
     lpszMenuFileExit = StrPtr(szMenuFileExit)
     lpszMenuHelp = StrPtr(szMenuHelp)
     lpszMenuHelpAbout = StrPtr(szMenuHelpAbout)
-
 'Main Menu
     hMenu = CreateMenu()
     hMenuFile = CreatePopupMenu()
@@ -505,70 +634,27 @@ Function DoCreateMenu(ByVal hWnd As LongPtr)
     hMenuHelp = CreatePopupMenu()
     Call AppendMenuW(hMenu, MF_POPUP, hMenuHelp, lpszMenuHelp)
         Call AppendMenuW(hMenuHelp, MF_STRING, IDM_HELP_ABOUT, lpszMenuHelpAbout)
-    Call SetMenu(hWnd, hMenu)
-    Call DrawMenuBar(hWnd)
+    Call SetMenu(ghWnd, hMenu)
+    Call DrawMenuBar(ghWnd)
+'ACCEL accel;
+    accel.fVirt = FVIRTKEY Or FCONTROL
+    'accel.dummy = 0
+    accel.key = &H57 'W
+    accel.cmd = IDM_APP_EXIT
+    paccel = VarPtr(accel)
+    hAccel = CreateAcceleratorTableW(paccel, 1)
 End Function
 
-Function DoCreateStatusBar(ByVal hWnd As LongPtr)
+Function DoCreateStatusBar()
     'https://learn.microsoft.com/en-us/windows/win32/winauto/status-bar-control
     szStatusClassName = "msctls_statusbar32" '"STATUSCLASSNAMEW"
     lpszStatusClassName = StrPtr(szStatusClassName)
     idStatusBar = 1 'Child window identifier for Status Bar
-    hwndStatusBar = CreateWindowExW(0, lpszStatusClassName, 0, SBARS_SIZEGRIP Or WS_CHILD Or WS_VISIBLE, 0, 0, 0, 0, hWnd, idStatusBar, ghInst, 0)
+    hwndStatusBar = CreateWindowExW(0, lpszStatusClassName, 0, SBARS_SIZEGRIP Or WS_CHILD Or WS_VISIBLE, 0, 0, 0, 0, ghWnd, idStatusBar, ghInst, 0)
     If hwndStatusBar = 0 Then
         Call MsgBox("Status Bar Error: " & GetLastError())
         Exit Function
     End If
-    xStatusParts(0) = 100
-    xStatusParts(1) = 200
-    xStatusParts(2) = 300
-    xStatusParts(3) = 450
-    xStatusParts(4) = 600
-    xStatusParts(5) = 750
-    xStatusParts(6) = 900
-    xStatusParts(7) = -1
-    lpStatusParts = VarPtr(xStatusParts(0))
-    Call SendMessageW(hwndStatusBar, SB_SETPARTS, 8, lpStatusParts)
-End Function
-
-Function CloseWndProc(ByVal hWnd As LongPtr)
-    szMsgText = "Close?"
-    lpszMsgText = StrPtr(szMsgText)
-    szMsgTitle = "Such A Good Application"
-    lpszMsgTitle = StrPtr(szMsgTitle)
-    If MessageBoxW(hWnd, lpszMsgText, lpszMsgTitle, MB_YESNO Or MB_ICONQUESTION) = IDYES Then
-        Call wglMakeCurrent(0, 0)
-        Call wglDeleteContext(ghRC)
-        Call ReleaseDC(hWnd, ghDC)
-        Call DestroyWindow(hWnd)
-    End If
-End Function
-
-Function AboutProc(ByVal hWnd As LongPtr)
-    szMsgText = _
-    "Camera Motion:" & Chr(13) & _
-    "Arrow Up - Move Forward" & Chr(13) & _
-    "Arrow Down - Move Backward" & Chr(13) & _
-    "Arrow Left - Move Left" & Chr(13) & _
-    "Arrow Right - Move Right" & Chr(13) & _
-    "Page Up - Move Up" & Chr(13) & _
-    "Page Down - Move Down" & Chr(13) & Chr(13) & _
-    "Camera Rotation:" & Chr(13) & _
-    "W - Look Down" & Chr(13) & _
-    "S - Look Up" & Chr(13) & _
-    "A - Look Left" & Chr(13) & _
-    "D - Look Right" & Chr(13) & Chr(13) & _
-    "Q - Roll the Camera Clockwise" & Chr(13) & _
-    "E - Roll the Camera Counter-Clockwise" & Chr(13) & _
-    "Object Rotation:" & Chr(13) & _
-    "Z - Turn the Object Clockwise" & Chr(13) & _
-    "C - Turn the Object Counter-Clockwise" & Chr(13) & _
-    "Tab - Turn the Object Clockwise Quick" & Chr(13) & Chr(13) & _
-    "Shift - Boost"
-    lpszMsgText = StrPtr(szMsgText)
-    szMsgTitle = "Manual"
-    lpszMsgTitle = StrPtr(szMsgTitle)
-    Call MessageBoxW(hWnd, lpszMsgText, lpszMsgTitle, MB_OK Or MB_ICONINFORMATION)
 End Function
 
 Function InitializeGL()
@@ -603,7 +689,7 @@ Function InitializeGL()
     pfd.dwLayerMask = 0
     pfd.dwVisibleMask = 0
     pfd.dwDamageMask = 0
-    lpPFD = VarPtr(pfd.nSize)
+    lpPFD = VarPtr(pfd)
 
     ghDC = GetDC(ghWnd)
 
@@ -629,34 +715,85 @@ Function InitializeGL()
     Call glEnable(GL_DEPTH_TEST)
     Call glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
 
-    Call ResetScene
+    Call ReSetView
 End Function
 
-Function GLResize(ByVal hWnd As LongPtr)
-    Call GetClientRect(hWnd, lpRectMain)
-    RectWidth = RectMain.right - RectMain.left
-    RectHeight = RectMain.bottom - RectMain.top
+Function GLResize()
     If RectHeight > 0 Then
         RectAspect = RectWidth / RectHeight
     End If
     'Main Viewport
     Call glViewport(0, 0, RectWidth, RectHeight)
-    'Status Bar
-    xStatusParts(6) = RectWidth - 50
+    'Status Bar Proportions
+    xStatusParts(0) = CInt(RectWidth * 0.09)
+    xStatusParts(1) = CInt(RectWidth * 0.18) '+0.09
+    xStatusParts(2) = CInt(RectWidth * 0.27) '+0.09
+    xStatusParts(3) = CInt(RectWidth * 0.38) '+0.11
+    xStatusParts(4) = CInt(RectWidth * 0.49) '+0.11
+    xStatusParts(5) = CInt(RectWidth * 0.6) '+0.11
+    xStatusParts(6) = CInt(RectWidth * 0.73) '+0.13
+    xStatusParts(7) = CInt(RectWidth * 0.86) '+0.13
+    xStatusParts(8) = -1
+    lpStatusParts = VarPtr(xStatusParts(0))
     Call SendMessageW(hwndStatusBar, WM_SIZE, 0, 0)
+    Call SendMessageW(hwndStatusBar, SB_SETPARTS, 9, lpStatusParts)
+End Function
+
+Function AboutProc()
+    szMsgText = _
+    "Camera Motion - Mouse Input:" & Chr(13) & _
+    "Left Mouse Button - Turn and Tilt the Camera" & Chr(13) & _
+    "Press Mouse Wheel - Move the Camera Up and Down, Left and Right" & Chr(13) & _
+    "Right Mouse Button - Roll and Tilt the Camera" & Chr(13) & _
+    "Mouse Scroll - Move the Camera Forward and Backward" & Chr(13) & Chr(13) & _
+    "Camera Motion - Keyboard Input:" & Chr(13) & _
+    "Arrow Up - Move Forward" & Chr(13) & _
+    "Arrow Down - Move Backward" & Chr(13) & _
+    "Arrow Left - Move Left" & Chr(13) & _
+    "Arrow Right - Move Right" & Chr(13) & _
+    "Page Up - Move Up" & Chr(13) & _
+    "Page Down - Move Down" & Chr(13) & Chr(13) & _
+    "Model Rotation:" & Chr(13) & _
+    "W - Tilt the Object Forward" & Chr(13) & _
+    "S - Tilt the Object Backward" & Chr(13) & _
+    "A - Turn the Object Left" & Chr(13) & _
+    "D - Turn the Object Right" & Chr(13) & _
+    "Q - Turn the Object Counter-Clockwise" & Chr(13) & _
+    "E - Turn the Object Clockwise" & Chr(13) & Chr(13) & _
+    "Tab - Turn the Object Clockwise Quick" & Chr(13) & Chr(13) & _
+    "Shift - Boost"
+    lpszMsgText = StrPtr(szMsgText)
+    szMsgTitle = "Manual"
+    lpszMsgTitle = StrPtr(szMsgTitle)
+    Call MessageBoxW(ghWnd, lpszMsgText, lpszMsgTitle, MB_OK Or MB_ICONINFORMATION)
+End Function
+
+Function CloseWndProc()
+    szMsgText = "Close?"
+    lpszMsgText = StrPtr(szMsgText)
+    szMsgTitle = "VBA WinAPI OpenGL Demo Application"
+    lpszMsgTitle = StrPtr(szMsgTitle)
+    If MessageBoxW(ghWnd, lpszMsgText, lpszMsgTitle, MB_YESNO Or MB_ICONQUESTION) = IDYES Then
+        Call wglMakeCurrent(0, 0)
+        Call wglDeleteContext(ghRC)
+        Call ReleaseDC(ghWnd, ghDC)
+        Call DestroyAcceleratorTable(hAccel)
+        Call DestroyWindow(ghWnd)
+    End If
 End Function
 
 Function DrawGLScene()
     Call glClear(GL_COLOR_BUFFER_BIT Or GL_DEPTH_BUFFER_BIT)
         Call CheckKeys
         Call RefreshStatus
-        Call SetScene
+        Call SetView
         Call DrawAxes
         Call DrawObject
     Call SwapBuffers(ghDC)
 End Function
 
 Function CheckKeys() 'For Continuous KeyStrokes
+Dim dxMouse, dyMouse As Integer
 'Return to Normal Speed
     dStep = LinearSpeed
     dAngle = AngularSpeed
@@ -665,40 +802,27 @@ Function CheckKeys() 'For Continuous KeyStrokes
         dStep = dStep * LinearBoost
         dAngle = dAngle * AngularBoost
     End If
-'Object Rotation
-    If key(&H5A) <> 0 Then  'Z - Object Turn Counter-Clockwise
-        aXY_Model = aXY_Model + dAngle
-        aXY_Model = CheckAngle(aXY_Model)
-    End If
-    If key(&H43) <> 0 Then  'C - Object Turn Clockwise
-        aXY_Model = aXY_Model - dAngle
-        aXY_Model = CheckAngle(aXY_Model)
-    End If
-'CameraRotation
+
+'Model Rotation
     If key(&H57) <> 0 Then  'W - Camera Tilt Down
-        aYZ_Cam = aYZ_Cam - dAngle
-        aYZ_Cam = CheckAngle(aYZ_Cam)
+        aYZ_Model = CheckAngle(aYZ_Model - dAngle)
     End If
     If key(&H53) <> 0 Then  'S - Camera Tilt Up
-        aYZ_Cam = aYZ_Cam + dAngle
-        aYZ_Cam = CheckAngle(aYZ_Cam)
+        aYZ_Model = CheckAngle(aYZ_Model + dAngle)
     End If
     If key(&H41) <> 0 Then  'A - Camera Turn Clockwise
-        aXY_Cam = aXY_Cam - dAngle
-        aXY_Cam = CheckAngle(aXY_Cam)
+        aXY_Model = CheckAngle(aXY_Model - dAngle)
     End If
     If key(&H44) <> 0 Then  'D - Camera Turn Counter-Clockwise
-        aXY_Cam = aXY_Cam + dAngle
-        aXY_Cam = CheckAngle(aXY_Cam)
+        aXY_Model = CheckAngle(aXY_Model + dAngle)
     End If
     If key(&H51) <> 0 Then  'Q - Camera Roll Clockwise
-        aXZ_Cam = aXZ_Cam + dAngle
-        aXZ_Cam = CheckAngle(aXZ_Cam)
+        aXZ_Model = CheckAngle(aXZ_Model + dAngle)
     End If
     If key(&H45) <> 0 Then  'E - Camera Roll Counter-Clockwise
-        aXZ_Cam = aXZ_Cam - dAngle
-        aXZ_Cam = CheckAngle(aXZ_Cam)
+        aXZ_Model = CheckAngle(aXZ_Model - dAngle)
     End If
+
 'Camera Move Forward and Backward
     If key(&H26) <> 0 Then 'Up Arrow
         dxCam0 = 0
@@ -748,6 +872,38 @@ Function CheckAngle(ByVal Angle As Single) As Single
     Else
         CheckAngle = Angle
     End If
+'Set Flag
+    isRefreshed = 0
+End Function
+
+Function CameraMove()
+'RotX - Tilt
+    aRad = -aYZ_Cam * PI_OVER_180 'Negative Angle
+    cosA = Cos(aRad)
+    sinA = Sin(aRad)
+    dxCam1 = dxCam0
+    dyCam1 = dyCam0 * cosA - dzCam0 * sinA
+    dzCam1 = dyCam0 * sinA + dzCam0 * cosA
+'RotZ - Turn
+    aRad = -aXY_Cam * PI_OVER_180 'Negative Angle
+    cosA = Cos(aRad)
+    sinA = Sin(aRad)
+    dxCam2 = dxCam1 * cosA - dyCam1 * sinA
+    dyCam2 = dxCam1 * sinA + dyCam1 * cosA
+    dzCam2 = dzCam1
+'RotY - Roll
+    aRad = -aXZ_Cam * PI_OVER_180 'Negative Angle
+    cosA = Cos(aRad)
+    sinA = Sin(aRad)
+    dxCam3 = dxCam2 * cosA + dzCam2 * sinA
+    dyCam3 = dyCam2
+    dzCam3 = dzCam2 * cosA - dxCam2 * sinA
+'Move
+    xCam = CheckDistance(xCam + dxCam3)
+    yCam = CheckDistance(yCam + dyCam3)
+    zCam = CheckDistance(zCam + dzCam3)
+'Set Flag
+    isRefreshed = 0
 End Function
 
 Function CheckDistance(ByVal Distance As Single) As Single
@@ -760,46 +916,13 @@ Function CheckDistance(ByVal Distance As Single) As Single
     End If
 End Function
 
-Function CameraMove()
-    'RotX - UnTilt
-    aRad = aYZ_Cam * PI_OVER_180
-    cosA = Cos(aRad)
-    sinA = Sin(aRad)
-    dxCam1 = dxCam0
-    dyCam1 = dyCam0 * cosA + dzCam0 * sinA
-    dzCam1 = dzCam0 * cosA - dyCam0 * sinA
-    'RotZ - UnTurn
-    aRad = aXY_Cam * PI_OVER_180
-    cosA = Cos(aRad)
-    sinA = Sin(aRad)
-    dxCam2 = dxCam1 * cosA + dyCam1 * sinA
-    dyCam2 = dyCam1 * cosA - dxCam1 * sinA
-    dzCam2 = dzCam1
-    'RotY - UnRoll
-    aRad = aXZ_Cam * PI_OVER_180
-    cosA = Cos(aRad)
-    sinA = Sin(aRad)
-    dxCam3 = dxCam2 * cosA - dzCam2 * sinA
-    dyCam3 = dyCam2
-    dzCam3 = dxCam2 * sinA + dzCam2 * cosA
-    'Move
-    xCam = xCam + dxCam3
-    yCam = yCam + dyCam3
-    zCam = zCam + dzCam3
-    'Check
-    xCam = CheckDistance(xCam)
-    yCam = CheckDistance(yCam)
-    zCam = CheckDistance(zCam)
-End Function
-
 Function RefreshStatus()
     sz_xCam = "xCam = " & format(xCam, "0.000")
     sz_yCam = "yCam = " & format(yCam, "0.000")
     sz_zCam = "zCam = " & format(zCam, "0.000")
-    'sz_xCam = "dxCam3 = " & format(dxCam3 * 1000, "0.000")
-    'sz_yCam = "dyCam3 = " & format(dyCam3 * 1000, "0.000")
-    'sz_zCam = "dzCam3 = " & format(dzCam3 * 1000, "0.000")
+    sz_aYZ_Model = "aYZ_Model = " & format(aYZ_Model, "0.000")
     sz_aXY_Model = "aXY_Model = " & format(aXY_Model, "0.000")
+    sz_aXZ_Model = "aXZ_Model = " & format(aXZ_Model, "0.000")
     sz_aYZ_Cam = "aYZ_Cam = " & format(aYZ_Cam, "0.000")
     sz_aXY_Cam = "aXY_Cam = " & format(aXY_Cam, "0.000")
     sz_aXZ_Cam = "aXZ_Cam = " & format(aXZ_Cam, "0.000")
@@ -807,7 +930,9 @@ Function RefreshStatus()
     lpsz_xCam = StrPtr(sz_xCam)
     lpsz_yCam = StrPtr(sz_yCam)
     lpsz_zCam = StrPtr(sz_zCam)
+    lpsz_aYZ_Model = StrPtr(sz_aYZ_Model)
     lpsz_aXY_Model = StrPtr(sz_aXY_Model)
+    lpsz_aXZ_Model = StrPtr(sz_aXZ_Model)
     lpsz_aYZ_Cam = StrPtr(sz_aYZ_Cam)
     lpsz_aXY_Cam = StrPtr(sz_aXY_Cam)
     lpsz_aXZ_Cam = StrPtr(sz_aXZ_Cam)
@@ -815,18 +940,22 @@ Function RefreshStatus()
     Call SendMessageW(hwndStatusBar, SB_SETTEXTW, 0, lpsz_xCam)
     Call SendMessageW(hwndStatusBar, SB_SETTEXTW, 1, lpsz_yCam)
     Call SendMessageW(hwndStatusBar, SB_SETTEXTW, 2, lpsz_zCam)
-    Call SendMessageW(hwndStatusBar, SB_SETTEXTW, 3, lpsz_aXY_Model)
-    Call SendMessageW(hwndStatusBar, SB_SETTEXTW, 4, lpsz_aYZ_Cam)
-    Call SendMessageW(hwndStatusBar, SB_SETTEXTW, 5, lpsz_aXY_Cam)
-    Call SendMessageW(hwndStatusBar, SB_SETTEXTW, 6, lpsz_aXZ_Cam)
+    Call SendMessageW(hwndStatusBar, SB_SETTEXTW, 3, lpsz_aYZ_Cam)
+    Call SendMessageW(hwndStatusBar, SB_SETTEXTW, 4, lpsz_aXY_Cam)
+    Call SendMessageW(hwndStatusBar, SB_SETTEXTW, 5, lpsz_aXZ_Cam)
+    Call SendMessageW(hwndStatusBar, SB_SETTEXTW, 6, lpsz_aYZ_Model)
+    Call SendMessageW(hwndStatusBar, SB_SETTEXTW, 7, lpsz_aXY_Model)
+    Call SendMessageW(hwndStatusBar, SB_SETTEXTW, 8, lpsz_aXZ_Model)
 End Function
 
-Function SetScene()
+Function SetView()
     'Set Object
     Call glMatrixMode(GL_MODELVIEW)
     Call glLoadIdentity
-    Call glScalef(GlobalScale, GlobalScale, GlobalScale)
-    Call glRotatef(aXY_Model, 0, 0, 1)
+    Call glScalef(GlobalScale, GlobalScale, GlobalScale) '1 - Model Scale
+    Call glRotatef(aYZ_Model, 1, 0, 0) '2 - Model Tilt
+    Call glRotatef(aXY_Model, 0, 0, 1) '3 - Model Turn
+    Call glRotatef(aXZ_Model, 0, 1, 0) '4 - Model Roll
     'Set Camera
     Call glMatrixMode(GL_PROJECTION)
     Call glLoadIdentity
@@ -834,32 +963,33 @@ Function SetScene()
     Call glRotatef(aYZ_Cam, 1, 0, 0) '1 - Camera Tilt
     Call glRotatef(aXY_Cam, 0, 0, 1) '2 - Camera Turn
     Call glRotatef(aXZ_Cam, 0, 1, 0) '3 - Camera Roll
-    Call glTranslatef(xCam, yCam, zCam)
+    Call glTranslatef(xCam, yCam, zCam) '4 - Camera Move
 End Function
 
-Function ResetScene()
+Function ReSetView()
     GlobalScale = 0.001
     If Len(ghInst) = 4 Then
-        LinearSpeed = 0.005 '32-bit Systems are Faster
+        LinearSpeed = 0.05 '32-bit Systems are Faster
         AngularSpeed = 0.1
     Else
-        LinearSpeed = 0.05 '64-bit Systems are Slower
+        LinearSpeed = 0.1 '64-bit Systems are Slower
         AngularSpeed = 1
     End If
     LinearBoost = 10
     AngularBoost = 10
     dStep = LinearSpeed
     dAngle = AngularSpeed
+    aYZ_Model = 0
     aXY_Model = 20
-    aYZ_Cam = 300 'Cameta Tilt
-    aXY_Cam = 0  'Camera Turn
-    aXZ_Cam = 0 'Camera Roll
-    xCam = 0 'Negative World Coordinates
-    yCam = 9 'Negative World Coordinates
-    zCam = -4.5 'Negative World Coordinates
-    dxCam3 = 0
-    dyCam3 = 0
-    dzCam3 = 0
+    aXZ_Model = 0
+    aYZ_Cam = 300 'Camera Tilt Up = World Tilt Down
+    aXY_Cam = 0  'Camera Turn Left = World Turn Right Over Camera Center
+    aXZ_Cam = 0 'Camera Roll Left = World Roll Right
+    xCam = 0
+    yCam = 9 'Camera Move Back = World Move Forward
+    zCam = -4.5 'Camera Move Up = World Move Down
+'Set Flag
+    isRefreshed = 1
 End Function
 
 Function DrawAxes()
@@ -951,5 +1081,4 @@ Function DrawCap()
         Call glEnd
     'Call glPopMatrix
 End Function
-
 

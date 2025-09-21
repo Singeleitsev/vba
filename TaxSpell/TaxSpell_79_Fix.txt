@@ -24,7 +24,7 @@ Set wshWorkSheet = ActiveSheet
 With wshWorkSheet.Cells(3, 1).Validation
     .Delete
     .Add Type:=xlValidateList, AlertStyle:=xlValidAlertStop, Operator:=xlBetween, _
-    Formula1:="кроме того НДС, в том числе НДС" 'Не получается поставить запятую после "кроме того"
+    Formula1:="кроме того \, НДС, в том числе НДС" 'Не получается поставить запятую после "кроме того"
     .IgnoreBlank = True
     .InCellDropdown = True
     .ShowInput = True
@@ -183,7 +183,7 @@ dMoney(1, 1) = dMoney(0, 1) * dPayRate
 dMoney(1, 1) = WorksheetFunction.Round(dMoney(1, 1), 2)
 wshWorkSheet.Cells(8, 3).Value = dMoney(1, 1)
 'Cost+VAT
-dMoney(1, 2) = dMoney(0, 2) * dPayRate
+dMoney(1, 2) = dMoney(1, 0) + dMoney(1, 1)
 dMoney(1, 2) = WorksheetFunction.Round(dMoney(1, 2), 2)
 wshWorkSheet.Cells(8, 4).Value = dMoney(1, 2)
 
@@ -217,20 +217,37 @@ For y = 0 To 2
         Call GetKopecks(y, x)
     Next x
 
-    'Integrate
+    'Integrate (Show Kopecks As Decimals)
+    'txtSpell = CVar( _
+    'LTrim(Format(dMoney(y, 0), _
+    '"### ### ### ##0.00")) & " (" & _
+    'SpellAll(y, 0) & _
+    '", кроме того, НДС по ставке " & _
+    'wshWorkSheet.Cells(3, 2).Value & _
+    '"% в размере " & _
+    'LTrim(Format(dMoney(y, 1), _
+    '"### ### ### ##0.00")) & " (" & _
+    'SpellAll(y, 1) & _
+    '", итого с НДС " & _
+    'LTrim(Format(dMoney(y, 2), _
+    '"### ### ### ##0.00")) & " (" & _
+    'SpellAll(y, 2) & _
+    '".")
+
+    'Integrate (Omit Kopecks)
     txtSpell = CVar( _
-    LTrim(Format(dMoney(y, 0), _
-    "### ### ### ##0.00")) & " (" & _
+    LTrim(Format(Fix(dMoney(y, 0)), _
+    "### ### ### ##0")) & " (" & _
     SpellAll(y, 0) & _
     ", кроме того, НДС по ставке " & _
     wshWorkSheet.Cells(3, 2).Value & _
     "% в размере " & _
-    LTrim(Format(dMoney(y, 1), _
-    "### ### ### ##0.00")) & " (" & _
+    LTrim(Format(Fix(dMoney(y, 1)), _
+    "### ### ### ##0")) & " (" & _
     SpellAll(y, 1) & _
     ", итого с НДС " & _
-    LTrim(Format(dMoney(y, 2), _
-    "### ### ### ##0.00")) & " (" & _
+    LTrim(Format(Fix(dMoney(y, 2)), _
+    "### ### ### ##0")) & " (" & _
     SpellAll(y, 2) & _
     ".")
 
@@ -312,7 +329,7 @@ End Function
 
 Function SpellAll(y As Byte, x As Byte) As String
 If Fix(dMoney(y, x)) = 0 Then
-    SpellAll = "Ноль рублей "
+    SpellAll = "Ноль) рублей "
 Else
     If iBillions(y, x) > 0 Then
         SpellAll = SpellBillions(iBillions(y, x))
@@ -432,15 +449,15 @@ SpellHundreds(iFragment) & _
 SpellTens(iTens, bLastDigit, "Nominativus", "Masculinum")
 
 If iTens > 4 And iTens < 21 Then
-    SpellRoubles = SpellRoubles + " рублей "
+    SpellRoubles = SpellRoubles + ") рублей "
 ElseIf bLastDigit = 0 Then
-    SpellRoubles = SpellRoubles + " рублей "
+    SpellRoubles = SpellRoubles + ") рублей "
 ElseIf bLastDigit = 1 Then
-    SpellRoubles = SpellRoubles + " рубль "
+    SpellRoubles = SpellRoubles + ") рубль "
 ElseIf bLastDigit < 5 Then
-    SpellRoubles = SpellRoubles + " рубля "
+    SpellRoubles = SpellRoubles + ") рубля "
 Else
-    SpellRoubles = SpellRoubles + " рублей "
+    SpellRoubles = SpellRoubles + ") рублей "
 End If
 End Function
 
@@ -582,23 +599,23 @@ bLastDigit = CByte(n * 10) '2
 
 'Spell
 If iTens = 0 Then
-    SpellKopecks = "00" & Chr(160) & "копеек)"
+    SpellKopecks = "00" & Chr(160) & "копеек"
 ElseIf iTens = 1 Then
-    SpellKopecks = "01" & Chr(160) & "копейка)"
+    SpellKopecks = "01" & Chr(160) & "копейка"
 ElseIf iTens < 5 Then
-    SpellKopecks = "0" & CStr(iTens) & Chr(160) & "копейки)"
+    SpellKopecks = "0" & CStr(iTens) & Chr(160) & "копейки"
 ElseIf iTens < 10 Then
-    SpellKopecks = "0" & CStr(iTens) & Chr(160) & "копеек)"
+    SpellKopecks = "0" & CStr(iTens) & Chr(160) & "копеек"
 ElseIf iTens < 21 Then
-    SpellKopecks = CStr(iTens) & Chr(160) & "копеек)"
+    SpellKopecks = CStr(iTens) & Chr(160) & "копеек"
 ElseIf bLastDigit = 0 Then
-    SpellKopecks = CStr(iTens) & Chr(160) & "копеек)"
+    SpellKopecks = CStr(iTens) & Chr(160) & "копеек"
 ElseIf bLastDigit = 1 Then
-    SpellKopecks = CStr(iTens) & Chr(160) & "копейка)"
+    SpellKopecks = CStr(iTens) & Chr(160) & "копейка"
 ElseIf bLastDigit < 5 Then
-    SpellKopecks = CStr(iTens) & Chr(160) & "копейки)"
+    SpellKopecks = CStr(iTens) & Chr(160) & "копейки"
 Else
-    SpellKopecks = CStr(iTens) & Chr(160) & "копеек)"
+    SpellKopecks = CStr(iTens) & Chr(160) & "копеек"
 End If
 End Function
 
