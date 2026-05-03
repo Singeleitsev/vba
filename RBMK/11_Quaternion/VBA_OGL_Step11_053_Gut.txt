@@ -10,6 +10,7 @@ Declare PtrSafe Function RegisterClassExW Lib "User32" (ByVal lpWndClass As Long
 Declare PtrSafe Function CreateWindowExW Lib "User32" (ByVal dwExStyle As LongPtr, ByVal lpClassName As LongPtr, ByVal lpWindowName As LongPtr, ByVal dwStyle As LongPtr, ByVal x As LongPtr, ByVal y As LongPtr, ByVal nWidth As LongPtr, ByVal nHeight As LongPtr, ByVal hWndParent As LongPtr, ByVal hMenu As LongPtr, ByVal hInstance As LongPtr, ByVal lpParam As LongPtr) As LongPtr
 Declare PtrSafe Function ShowWindow Lib "User32" (ByVal hWnd As LongPtr, ByVal nCmdShow As LongPtr) As LongPtr
 Declare PtrSafe Function UpdateWindow Lib "User32" (ByVal hWnd As LongPtr) As LongPtr
+Declare PtrSafe Function SetFocus Lib "User32" (ByVal hWnd As LongPtr) As LongPtr
 Declare PtrSafe Function PeekMessageW Lib "User32" (ByVal lpMsg As LongPtr, ByVal hWnd As LongPtr, ByVal wMsgFilterMin As LongPtr, ByVal wMsgFilterMax As LongPtr, ByVal wRemoveMsg As LongPtr) As LongPtr
 Declare PtrSafe Function TranslateAcceleratorW Lib "User32" (ByVal hWnd As LongPtr, ByVal hAccTable As LongPtr, ByVal lpMsg As LongPtr) As LongPtr
 Declare PtrSafe Function TranslateMessage Lib "User32" (ByVal lpMsg As LongPtr) As LongPtr
@@ -100,8 +101,6 @@ Type POINT2D
     x As Long
     y As Long
 End Type
-Public pt As POINT2D
-Public lpMsgPt As LongPtr
 'MSG msg;
 Type Msg
     hWnd As LongPtr
@@ -121,8 +120,6 @@ Type RECT
     right As Long
     bottom As Long
 End Type
-Public RectMain As RECT
-Public lpRectMain As LongPtr 'Pointer
 Public RectWidth As Long
 Public RectHeight As Long
 Public RectAspect As Double
@@ -358,9 +355,6 @@ Public lpszMenuHelpAbout As LongPtr
 'RBMK Layout
 Public RBMK(0 To 47, 0 To 47) As Byte
 
-'Input Parameters
-Const mouseSensitivity As Single = 0.01
-
 'OpenGL
 Public ghDC As LongPtr
 Public ghRC As LongPtr
@@ -378,8 +372,11 @@ Public AngularSpeed As Single
 Public AngularBoost As Single
 Public dAngle As Single
 
+'Camera Position
+Public camPos As POINT3D
+
 'Quaternions
-'Public qModelRot As QUATERNION
+Public qModelRot As QUATERNION
 Public qCamRot As QUATERNION
 
 'Matrices
@@ -509,8 +506,6 @@ Sub Start()
 End Sub
 
 Function WinMain(ByVal hInstance As LongPtr, ByVal hPrevInstance As LongPtr, ByVal lpCmdLine As LongPtr, ByVal nCmdShow As LongPtr)
-'Main Cycle
-    Dim nPeek As LongPtr
 'Debug
     Dim nWndClass As LongPtr 'For Debug Purpose
 
@@ -560,24 +555,29 @@ Function WinMain(ByVal hInstance As LongPtr, ByVal hPrevInstance As LongPtr, ByV
 
     Call ShowWindow(ghWnd, SW_SHOW)
     Call UpdateWindow(ghWnd)
+    Call SetFocus(ghWnd)
 
 WinMainLoop:
-    nPeek = PeekMessageW(lpMsg, 0, 0, 0, PM_REMOVE)
-    If nPeek = 0 And isNotActive = 0 Then
-        Call DrawGLScene 'We'll draw the OpenGL Scene outside the WndProc
-    ElseIf wmsg.message = WM_QUIT Then
-        WinMain = wmsg.wParam
-        Exit Function 'Don't use Call ExitProcess(0)
-    ElseIf TranslateAcceleratorW(ghWnd, hAccel, lpMsg) = 0 Then
-        Call TranslateMessage(lpMsg)
-        Call DispatchMessageW(lpMsg)
-    End If
+    ' Always process pending messages first
+    While PeekMessageW(lpMsg, 0, 0, 0, PM_REMOVE) <> 0
+        If wmsg.message = WM_QUIT Then
+            WinMain = wmsg.wParam
+            Exit Function
+        End If
+        If TranslateAcceleratorW(ghWnd, hAccel, lpMsg) = 0 Then
+            Call TranslateMessage(lpMsg)
+            Call DispatchMessageW(lpMsg)
+        End If
+    Wend
+    ' Only draw when no messages and window is active
+    If isNotActive = 0 Then Call DrawGLScene
     GoTo WinMainLoop
 End Function
 
 Function WndProc(ByVal hWnd As LongPtr, ByVal message As LongPtr, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
-Dim i As Byte
-Dim tbRot As QUATERNION
+Dim tbRot As QUATERNION, tabQ As QUATERNION
+Dim moveVec As POINT3D, stepVec As POINT3D
+Dim rawDelta As Long
 
 Select Case message
     Case WM_MOUSEMOVE
@@ -627,7 +627,9 @@ lbl_wmSize:
     GoTo lbl_WndProc_Return0
 
 lbl_wmActivate:
-    isNotActive = CLng(wParam / 65536) 'High Word
+    ' The low word of wParam contains the activation flag
+    ' WA_INACTIVE = 0, WA_ACTIVE = 1, WA_CLICKACTIVE = 2
+    isNotActive = IIf((wParam And &HFFFF&) = 0, 1, 0)
     GoTo lbl_WndProc_Return0
 
 lbl_wmKeyDown:
@@ -635,9 +637,9 @@ lbl_wmKeyDown:
     key(nKeyCode) = 1
     Select Case nKeyCode 'For single (not continuous) KeyStrokes
         Case VK_TAB
-            Call glMatrixMode(GL_MODELVIEW)
-            Call glRotatef(30, 0, 0, 1)
-            isRefreshed = 0
+            tabQ = QuatFromAxisAngle(0, 0, 1, 30)
+            Call MulQbyQ(tabQ, qModelRot, qModelRot)
+            Call UpdateModelview
         Case VK_RETURN 'Enter
             Call AboutProc
         Case VK_SPACE
@@ -646,7 +648,7 @@ lbl_wmKeyDown:
             If isInitialPosition = 0 Then
                 Call ReSetView
             Else
-                Call CloseWndProc
+                Call SendMessageW(ghWnd, WM_CLOSE, 0, 0)
             End If
         Case VK_F1
             Call AboutProc
@@ -663,25 +665,34 @@ lbl_wmMouseMove:
     yCurPos = CLng(lParam) / 65536
     dxMouse = xPrevPos - xCurPos
     dyMouse = yPrevPos - yCurPos
-    If nMouseMode = 1 Then   ' LMB – rotate model
+    If nMouseMode = 1 Then   ' LMB – rotate model (local axes)
         Call TrackballRotation(xPrevPos, yPrevPos, xCurPos, yCurPos, RectWidth, RectHeight, tbRot)
-        Call CvtQtoM(tbRot)
-        Call glMatrixMode(GL_MODELVIEW)      ' ? modelview for object
-        Call glMultMatrixf(lp_mtxRotationBuffer)
-        isRefreshed = 0
+        'Right-multiply: qModelRot = tbRot * qModelRot
+        Call MulQbyQ(tbRot, qModelRot, qModelRot)
+        Call UpdateModelview
     ElseIf nMouseMode = 2 Then
-        ' MButton translation (unchanged)
-        Call glMatrixMode(GL_MODELVIEW)
-        dStep = dxMouse * (-8)
-        Call glTranslatef(dStep * mtxModelViewBuffer(0), dStep * mtxModelViewBuffer(4), dStep * mtxModelViewBuffer(8))
-        dStep = dyMouse * 16
-        Call glTranslatef(dStep * mtxModelViewBuffer(1), dStep * mtxModelViewBuffer(5), dStep * mtxModelViewBuffer(9))
-        isRefreshed = 0
-    ElseIf nMouseMode = 3 Then   ' RMB – rotate camera
+        'Horizontal movement (dx) -> right/left in camera space
+        moveVec.x = dxMouse * (-8)   ' sign to match original behaviour
+        moveVec.y = 0
+        moveVec.z = 0
+        moveVec = RotateVectorByQuaternion(moveVec, qCamRot)
+        camPos.x = camPos.x + moveVec.x
+        camPos.y = camPos.y + moveVec.y
+        camPos.z = camPos.z + moveVec.z
+        'Vertical movement (dy) -> up/down in camera space
+        moveVec.x = 0
+        moveVec.y = dyMouse * 16
+        moveVec.z = 0
+        moveVec = RotateVectorByQuaternion(moveVec, qCamRot)
+        camPos.x = camPos.x + moveVec.x
+        camPos.y = camPos.y + moveVec.y
+        camPos.z = camPos.z + moveVec.z
+        Call UpdateModelview
+    ElseIf nMouseMode = 3 Then   ' RMB – rotate camera (world axes)
         Call TrackballRotation(xPrevPos, yPrevPos, xCurPos, yCurPos, RectWidth, RectHeight, tbRot)
+        'Left-multiply: qCamRot = tbRot * qCamRot
         Call MulQbyQ(tbRot, qCamRot, qCamRot)
-        Call ReSetView
-        isRefreshed = 0
+        Call UpdateModelview
     End If
     xPrevPos = xCurPos
     yPrevPos = yCurPos
@@ -689,6 +700,7 @@ lbl_wmMouseMove:
 
 lbl_wmLButtonDown:
     nMouseMode = 1
+    isInitialPosition = 0
     xPrevPos = CLng(lParam And 32767) 'Low Word, Signed Integer
     yPrevPos = CLng(lParam / 65536) 'High Word
     GoTo lbl_WndProc_Return0
@@ -698,6 +710,7 @@ lbl_wmLButtonUp:
 
 lbl_wmRButtonDown:
     nMouseMode = 3
+    isInitialPosition = 0
     xPrevPos = CLng(lParam And 32767) 'Low Word, Signed Integer
     yPrevPos = CLng(lParam / 65536) 'High Word
     GoTo lbl_WndProc_Return0
@@ -707,6 +720,7 @@ lbl_wmRButtonUp:
 
 lbl_wmMButtonDown:
     nMouseMode = 2
+    isInitialPosition = 0
     xPrevPos = CLng(lParam And 32767) 'Low Word, Signed Integer
     yPrevPos = CLng(lParam / 65536) 'High Word
     GoTo lbl_WndProc_Return0
@@ -719,15 +733,18 @@ lbl_wmMButtonDblClk:
     GoTo lbl_WndProc_Return0
 
 lbl_wmMouseWheel:
-    If CLng(wParam And &H80000000) = 0 Then 'GET_WHEEL_DELTA_WPARAM(wParam) == HIWORD(wParam) == WHEEL_DELTA == either 120 or (-120)
-        dStep = LinearSpeed * (-10)
-    Else
-        dStep = LinearSpeed * 10
-    End If
-    Call glMatrixMode(GL_MODELVIEW)
-    Call glGetFloatv(GL_MODELVIEW_MATRIX, lp_mtxModelViewBuffer)
-    Call glTranslatef(dStep * mtxModelViewBuffer(2), dStep * mtxModelViewBuffer(6), dStep * mtxModelViewBuffer(10))
-    isRefreshed = 0
+    isInitialPosition = 0
+    rawDelta = CLng(wParam \ 65536) And &HFFFF&
+    If rawDelta > 32767 Then rawDelta = rawDelta - 65536
+    dStep = LinearSpeed * IIf(rawDelta > 0, -10, 10)
+    stepVec.x = 0
+    stepVec.y = 0
+    stepVec.z = dStep
+    stepVec = RotateVectorByQuaternion(stepVec, qCamRot)
+    camPos.x = camPos.x + stepVec.x
+    camPos.y = camPos.y + stepVec.y
+    camPos.z = camPos.z + stepVec.z
+    Call UpdateModelview
     GoTo lbl_WndProc_Return0
 
 lbl_wmCommand:
@@ -744,6 +761,11 @@ lbl_wmClose:
     GoTo lbl_WndProc_Return0
 
 lbl_wmDestroy:
+    ' Clean up OpenGL and GDI resources
+    Call wglMakeCurrent(0, 0)
+    If ghRC <> 0 Then Call wglDeleteContext(ghRC)
+    If ghDC <> 0 Then Call ReleaseDC(ghWnd, ghDC)
+    If hAccel <> 0 Then Call DestroyAcceleratorTable(hAccel)
     Call PostQuitMessage(0)
 lbl_WndProc_Return0:
     WndProc = 0
@@ -872,7 +894,16 @@ Function InitializeGL()
     'Call glEnable(GL_POLYGON_SMOOTH) 'Outlines
     Call glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST)
 
+'Camera Position
+    camPos.x = 0
+    camPos.y = 1500
+    camPos.z = -9000
+
 'Quaternions
+    qModelRot.x = 0
+    qModelRot.y = 0
+    qModelRot.z = 0
+    qModelRot.w = 1
     qCamRot.x = 0
     qCamRot.y = 0
     qCamRot.z = 0
@@ -880,6 +911,7 @@ Function InitializeGL()
 'MatrixBuffers
     lp_mtxModelViewBuffer = VarPtr(mtxModelViewBuffer(0))
     lp_mtxRotationBuffer = VarPtr(mtxRotationBuffer(0))
+
 'Normal Vector
     lpNormal = VarPtr(v3Normal)
 'Gray
@@ -977,10 +1009,7 @@ Function InitializeGL()
 
 End Function
 
-' Compute trackball rotation quaternion from previous to current mouse position
-' Window size (RectWidth, RectHeight) is needed to normalise coordinates
-Sub TrackballRotation(ByVal prevX As Long, ByVal prevY As Long, ByVal currX As Long, ByVal currY As Long, _
-                      ByVal winW As Long, ByVal winH As Long, ByRef qOut As QUATERNION)
+Sub TrackballRotation(ByVal prevX As Long, ByVal prevY As Long, ByVal currX As Long, ByVal currY As Long, ByVal winW As Long, ByVal winH As Long, ByRef qOut As QUATERNION)
     Dim p1 As POINT3D, p2 As POINT3D
     Dim axis As POINT3D
     Dim angle As Single
@@ -995,36 +1024,36 @@ Sub TrackballRotation(ByVal prevX As Long, ByVal prevY As Long, ByVal currX As L
         Exit Sub
     End If
     
-    ' Map to range [-1..1] and adjust for aspect ratio
+    'Map to range [-1..1] and adjust for aspect ratio
     radius = 1#
     p1.x = (2 * prevX - winW) / winW
     p1.y = (winH - 2 * prevY) / winH   ' flip Y
     p2.x = (2 * currX - winW) / winW
     p2.y = (winH - 2 * currY) / winH
     
-    ' Project onto sphere
+    'Project onto sphere
     p1 = ProjectToSphere(p1.x, p1.y, radius)
     p2 = ProjectToSphere(p2.x, p2.y, radius)
     
-    ' Compute rotation axis = cross(p1, p2)
+    'Compute rotation axis = cross(p1, p2)
     axis.x = p1.y * p2.z - p1.z * p2.y
     axis.y = p1.z * p2.x - p1.x * p2.z
     axis.z = p1.x * p2.y - p1.y * p2.x
     
-    ' Angle = dot(p1, p2) -> cos(angle)
+    'Angle = dot(p1, p2) -> cos(angle)
     dot = p1.x * p2.x + p1.y * p2.y + p1.z * p2.z
     If dot > 1 Then dot = 1
     If dot < -1 Then dot = -1
     angle = Acos(dot)
     
-    ' Normalise axis
+    'Normalise axis
     norm = Sqr(axis.x * axis.x + axis.y * axis.y + axis.z * axis.z)
     If norm > 0 Then
         axis.x = axis.x / norm
         axis.y = axis.y / norm
         axis.z = axis.z / norm
     Else
-        ' No rotation
+        'No rotation
         qOut.x = 0: qOut.y = 0: qOut.z = 0: qOut.w = 1
         Exit Sub
     End If
@@ -1137,22 +1166,48 @@ Function ReSetView()
     End If
     LinearBoost = 10
     AngularBoost = 10
-'Set Object
-    Call glMatrixMode(GL_MODELVIEW)
-    Call glLoadIdentity
-    Call glRotatef(20, 0, 0, 1) 'Model Turn
-'Set Camera
+'Reset camera position to default
+    camPos.x = 0
+    camPos.y = 1500
+    camPos.z = -9000
+'Reset orientations
+    qModelRot.x = 0
+    qModelRot.y = 0
+    qModelRot.z = 0
+    qModelRot.w = 1
+    qCamRot.x = 0
+    qCamRot.y = 0
+    qCamRot.z = 0
+    qCamRot.w = 1
+'Rebuild matrices
+    Call UpdateProjection
+    Call UpdateModelview
+'Set Flags
+    isInitialPosition = 1
+    nMouseMode = 0 'Reset mouse mode – prevents unwanted rotation after ESC
+End Function
+
+Function UpdateProjection()
     Call glMatrixMode(GL_PROJECTION)
     Call glLoadIdentity
     Call gluPerspective(90, RectAspect, 1, 1000000)
-'Apply camera rotation (RMB) – this turns the head
+End Function
+
+Function UpdateModelview()
+    Call glMatrixMode(GL_MODELVIEW)
+    Call glLoadIdentity
+'1) Camera orientation (world rotation)
     Call CvtQtoM(qCamRot)
     Call glMultMatrixf(lp_mtxRotationBuffer)
-'Now apply camera position and base tilt (these are now relative to the rotated view)
-    Call glTranslatef(0, 1500, -9000) 'Camera Move
-    Call glRotatef(300, 1, 0, 0)  'Camera Tilt
+'2) Camera position and tilt
+    Call glTranslatef(camPos.x, camPos.y, camPos.z)
+    Call glRotatef(300, 1, 0, 0)   ' fixed camera tilt
+'3) Model orientation
+    Call CvtQtoM(qModelRot)
+    Call glMultMatrixf(lp_mtxRotationBuffer)
+'4) Fixed initial model rotation
+    Call glRotatef(20, 0, 0, 1)
 'Set Flags
-    isInitialPosition = 1
     isRefreshed = 0
 End Function
 
@@ -1163,9 +1218,12 @@ Function GLResize()
     Else
         RectAspect = 1#
     End If
-    'Main Viewport
+'Main Viewport
     Call glViewport(0, 0, RectWidth, RectHeight)
-    'Status Bar Proportions
+'Rebuild matrices
+    Call UpdateProjection
+    Call UpdateModelview
+'Status Bar Proportions
     For i = 0 To 10
         xStatusParts(i) = (i + 1) * CInt(RectWidth / 12)
     Next i
@@ -1173,17 +1231,16 @@ Function GLResize()
     lpStatusParts = VarPtr(xStatusParts(0))
     Call SendMessageW(hwndStatusBar, WM_SIZE, 0, 0)
     Call SendMessageW(hwndStatusBar, SB_SETPARTS, 12, lpStatusParts)
-    isRefreshed = 0
 End Function
 
 Function AboutProc()
     szMsgText = _
-    "Camera Motion - Mouse Input:" & Chr(13) & _
-    "Left Mouse Button - Turn and Tilt the Camera" & Chr(13) & _
-    "Press Mouse Wheel - Move the Camera Up and Down, Left and Right" & Chr(13) & _
-    "Right Mouse Button - Roll and Tilt the Camera" & Chr(13) & _
-    "Mouse Scroll - Move the Camera Forward and Backward" & Chr(13) & Chr(13) & _
-    "Camera Motion - Keyboard Input:" & Chr(13) & _
+    "Mouse Input:" & Chr(13) & _
+    "Left Mouse Button - Rotate the Model" & Chr(13) & _
+    "Press Mouse Wheel - Move Up and Down, Left and Right" & Chr(13) & _
+    "Right Mouse Button - Rotate the Camera" & Chr(13) & _
+    "Mouse Scroll - Move Forward and Backward" & Chr(13) & Chr(13) & _
+    "Keyboard Input:" & Chr(13) & _
     "Arrow Up - Move Forward" & Chr(13) & _
     "Arrow Down - Move Backward" & Chr(13) & _
     "Arrow Left - Move Left" & Chr(13) & _
@@ -1191,13 +1248,13 @@ Function AboutProc()
     "Page Up - Move Up" & Chr(13) & _
     "Page Down - Move Down" & Chr(13) & Chr(13) & _
     "Model Rotation:" & Chr(13) & _
-    "W - Tilt the Object Forward" & Chr(13) & _
-    "S - Tilt the Object Backward" & Chr(13) & _
-    "A - Turn the Object Left" & Chr(13) & _
-    "D - Turn the Object Right" & Chr(13) & _
-    "Q - Turn the Object Counter-Clockwise" & Chr(13) & _
-    "E - Turn the Object Clockwise" & Chr(13) & Chr(13) & _
-    "Tab - Turn the Object Clockwise Quick" & Chr(13) & Chr(13) & _
+    "W - Tilt the Model Forward" & Chr(13) & _
+    "S - Tilt the Model Backward" & Chr(13) & _
+    "A - Turn the Model Left" & Chr(13) & _
+    "D - Turn the Model Right" & Chr(13) & _
+    "Q - Turn the Model Counter-Clockwise" & Chr(13) & _
+    "E - Turn the Model Clockwise" & Chr(13) & Chr(13) & _
+    "Tab - Turn the Model Clockwise Quick" & Chr(13) & Chr(13) & _
     "Shift - Boost"
     lpszMsgText = StrPtr(szMsgText)
     szMsgTitle = "Manual"
@@ -1211,11 +1268,7 @@ Function CloseWndProc()
     szMsgTitle = "VBA WinAPI OpenGL Demo Application"
     lpszMsgTitle = StrPtr(szMsgTitle)
     If MessageBoxW(ghWnd, lpszMsgText, lpszMsgTitle, MB_YESNO Or MB_ICONQUESTION) = IDYES Then
-        Call wglMakeCurrent(0, 0)
-        Call wglDeleteContext(ghRC)
-        Call ReleaseDC(ghWnd, ghDC)
-        Call DestroyAcceleratorTable(hAccel)
-        Call DestroyWindow(ghWnd)
+        Call DestroyWindow(ghWnd)   ' This sends WM_DESTROY, where we clean up
     End If
 End Function
 
@@ -1236,72 +1289,137 @@ Function DrawGLScene()
 End Function
 
 Function CheckKeys() 'For Continuous KeyStrokes
+Dim kq As QUATERNION
+Dim stepVec As POINT3D
+
 'Return to Normal Speed
     dStep = LinearSpeed
     dAngle = AngularSpeed
 'Boost
-    If key(&H10) <> 0 Then  'Shift
-        dStep = dStep * LinearBoost
-        dAngle = dAngle * AngularBoost
-    End If
+If key(&H10) <> 0 Then  'Shift
+    dStep = dStep * LinearBoost
+    dAngle = dAngle * AngularBoost
+End If
 
-Call glMatrixMode(GL_MODELVIEW)
-'Model Rotation
-    If key(&H57) <> 0 Then  'W - Camera Tilt Down
-        Call glRotatef(-dAngle, 1, 0, 0)
-        isRefreshed = 0
-    End If
-    If key(&H53) <> 0 Then  'S - Camera Tilt Up
-        Call glRotatef(dAngle, 1, 0, 0)
-        isRefreshed = 0
-    End If
-    If key(&H41) <> 0 Then  'A - Camera Turn Clockwise
-        Call glRotatef(-dAngle, 0, 0, 1)
-        isRefreshed = 0
-    End If
-    If key(&H44) <> 0 Then  'D - Camera Turn Counter-Clockwise
-        Call glRotatef(dAngle, 0, 0, 1)
-        isRefreshed = 0
-    End If
-    If key(&H51) <> 0 Then  'Q - Camera Roll Clockwise
-        Call glRotatef(dAngle, 0, 1, 0)
-        isRefreshed = 0
-    End If
-    If key(&H45) <> 0 Then  'E - Camera Roll Counter-Clockwise
-        Call glRotatef(-dAngle, 0, 1, 0)
-        isRefreshed = 0
-    End If
-'Camera Movement
-    If key(&H26) <> 0 Then 'Up Arrow
-        Call glGetFloatv(GL_MODELVIEW_MATRIX, lp_mtxModelViewBuffer)
-        Call glTranslatef(-dStep * mtxModelViewBuffer(2), -dStep * mtxModelViewBuffer(6), -dStep * mtxModelViewBuffer(10))
-        isRefreshed = 0
-    End If
-    If key(&H28) <> 0 Then 'Down Arrow
-        Call glGetFloatv(GL_MODELVIEW_MATRIX, lp_mtxModelViewBuffer)
-        Call glTranslatef(dStep * mtxModelViewBuffer(2), dStep * mtxModelViewBuffer(6), dStep * mtxModelViewBuffer(10))
-        isRefreshed = 0
-    End If
-    If key(&H25) <> 0 Then 'Left Arrow
-        Call glGetFloatv(GL_MODELVIEW_MATRIX, lp_mtxModelViewBuffer)
-        Call glTranslatef(dStep * mtxModelViewBuffer(0), dStep * mtxModelViewBuffer(4), dStep * mtxModelViewBuffer(8))
-        isRefreshed = 0
-    End If
-    If key(&H27) <> 0 Then 'Right Arrow
-        Call glGetFloatv(GL_MODELVIEW_MATRIX, lp_mtxModelViewBuffer)
-        Call glTranslatef(-dStep * mtxModelViewBuffer(0), -dStep * mtxModelViewBuffer(4), -dStep * mtxModelViewBuffer(8))
-        isRefreshed = 0
-    End If
-    If key(&H21) <> 0 Then 'Page Up
-        Call glGetFloatv(GL_MODELVIEW_MATRIX, lp_mtxModelViewBuffer)
-        Call glTranslatef(-dStep * mtxModelViewBuffer(1), -dStep * mtxModelViewBuffer(5), -dStep * mtxModelViewBuffer(9))
-        isRefreshed = 0
-    End If
-    If key(&H22) <> 0 Then 'Page Down
-        Call glGetFloatv(GL_MODELVIEW_MATRIX, lp_mtxModelViewBuffer)
-        Call glTranslatef(dStep * mtxModelViewBuffer(1), dStep * mtxModelViewBuffer(5), dStep * mtxModelViewBuffer(9))
-        isRefreshed = 0
-    End If
+'Model Rotation using quaternions (keyboard)
+If key(&H57) <> 0 Then  ' W – tilt down (rotate around X)
+    kq = QuatFromAxisAngle(1, 0, 0, -dAngle)
+    Call MulQbyQ(kq, qModelRot, qModelRot)   ' right-multiply
+    isInitialPosition = 0
+    Call UpdateModelview
+End If
+If key(&H53) <> 0 Then  ' S – tilt up
+    kq = QuatFromAxisAngle(1, 0, 0, dAngle)
+    Call MulQbyQ(kq, qModelRot, qModelRot)
+    isInitialPosition = 0
+    Call UpdateModelview
+End If
+If key(&H41) <> 0 Then  ' A – turn clockwise (around Z)
+    kq = QuatFromAxisAngle(0, 0, 1, -dAngle)
+    Call MulQbyQ(kq, qModelRot, qModelRot)
+    isInitialPosition = 0
+    Call UpdateModelview
+End If
+If key(&H44) <> 0 Then  ' D – turn counter-clockwise
+    kq = QuatFromAxisAngle(0, 0, 1, dAngle)
+    Call MulQbyQ(kq, qModelRot, qModelRot)
+    isInitialPosition = 0
+    Call UpdateModelview
+End If
+If key(&H51) <> 0 Then  ' Q – roll clockwise (around Y)
+    kq = QuatFromAxisAngle(0, 1, 0, dAngle)
+    Call MulQbyQ(kq, qModelRot, qModelRot)
+    isInitialPosition = 0
+    Call UpdateModelview
+End If
+If key(&H45) <> 0 Then  ' E – roll counter-clockwise
+    kq = QuatFromAxisAngle(0, 1, 0, -dAngle)
+    Call MulQbyQ(kq, qModelRot, qModelRot)
+    isInitialPosition = 0
+    Call UpdateModelview
+End If
+
+'Camera movement using quaternion orientation
+If key(&H26) <> 0 Then 'Up Arrow – move forward
+    stepVec.x = 0: stepVec.y = 0: stepVec.z = -dStep
+    stepVec = RotateVectorByQuaternion(stepVec, qCamRot)
+    camPos.x = camPos.x + stepVec.x
+    camPos.y = camPos.y + stepVec.y
+    camPos.z = camPos.z + stepVec.z
+    isInitialPosition = 0
+    Call UpdateModelview
+End If
+If key(&H28) <> 0 Then 'Down Arrow – move backward
+    stepVec.x = 0: stepVec.y = 0: stepVec.z = dStep
+    stepVec = RotateVectorByQuaternion(stepVec, qCamRot)
+    camPos.x = camPos.x + stepVec.x
+    camPos.y = camPos.y + stepVec.y
+    camPos.z = camPos.z + stepVec.z
+    isInitialPosition = 0
+    Call UpdateModelview
+End If
+If key(&H25) <> 0 Then 'Left Arrow – strafe left
+    stepVec.x = -dStep: stepVec.y = 0: stepVec.z = 0
+    stepVec = RotateVectorByQuaternion(stepVec, qCamRot)
+    camPos.x = camPos.x + stepVec.x
+    camPos.y = camPos.y + stepVec.y
+    camPos.z = camPos.z + stepVec.z
+    isInitialPosition = 0
+    Call UpdateModelview
+End If
+If key(&H27) <> 0 Then 'Right Arrow – strafe right
+    stepVec.x = dStep: stepVec.y = 0: stepVec.z = 0
+    stepVec = RotateVectorByQuaternion(stepVec, qCamRot)
+    camPos.x = camPos.x + stepVec.x
+    camPos.y = camPos.y + stepVec.y
+    camPos.z = camPos.z + stepVec.z
+    isInitialPosition = 0
+    Call UpdateModelview
+End If
+If key(&H21) <> 0 Then 'Page Up – move up
+    stepVec.x = 0: stepVec.y = dStep: stepVec.z = 0
+    stepVec = RotateVectorByQuaternion(stepVec, qCamRot)
+    camPos.x = camPos.x + stepVec.x
+    camPos.y = camPos.y + stepVec.y
+    camPos.z = camPos.z + stepVec.z
+    isInitialPosition = 0
+    Call UpdateModelview
+End If
+If key(&H22) <> 0 Then 'Page Down – move down
+    stepVec.x = 0: stepVec.y = -dStep: stepVec.z = 0
+    stepVec = RotateVectorByQuaternion(stepVec, qCamRot)
+    camPos.x = camPos.x + stepVec.x
+    camPos.y = camPos.y + stepVec.y
+    camPos.z = camPos.z + stepVec.z
+    isInitialPosition = 0
+    Call UpdateModelview
+End If
+End Function
+
+Function QuatFromAxisAngle(ByVal ax As Single, ByVal ay As Single, ByVal az As Single, ByVal angleDeg As Single) As QUATERNION
+    Dim radHalf As Single
+    radHalf = (angleDeg * 0.5) * PI_OVER_180   ' PI_OVER_180 = 0.0174532925
+    Dim s As Single
+    s = Sin(radHalf)
+    QuatFromAxisAngle.x = ax * s
+    QuatFromAxisAngle.y = ay * s
+    QuatFromAxisAngle.z = az * s
+    QuatFromAxisAngle.w = Cos(radHalf)
+End Function
+
+Function RotateVectorByQuaternion(ByRef v As POINT3D, ByRef q As QUATERNION) As POINT3D
+    ' Rotates vector v by quaternion q (assuming q is unit)
+    ' Result = q * v * conj(q)
+    Dim t As POINT3D, u As POINT3D
+    t.x = 2 * (q.y * v.z - q.z * v.y)
+    t.y = 2 * (q.z * v.x - q.x * v.z)
+    t.z = 2 * (q.x * v.y - q.y * v.x)
+    
+    u.x = v.x + q.w * t.x + (q.y * t.z - q.z * t.y)
+    u.y = v.y + q.w * t.y + (q.z * t.x - q.x * t.z)
+    u.z = v.z + q.w * t.z + (q.x * t.y - q.y * t.x)
+    
+    RotateVectorByQuaternion = u
 End Function
 
 Function RefreshStatus()
@@ -1479,5 +1597,9 @@ Call glBegin(GL_QUADS)
 Call glEnd
 'Call glPopMatrix
 End Function
+
+
+
+
 
 
