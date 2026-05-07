@@ -1,0 +1,1600 @@
+Attribute VB_Name = "Module1"
+'For 32 bit & 64 bit
+Option Explicit
+
+'WinMain
+Declare PtrSafe Function GetModuleHandleW Lib "Kernel32" (ByVal lpModuleName As LongPtr) As LongPtr
+Declare PtrSafe Function LoadIconW Lib "User32" (ByVal hInstance As LongPtr, ByVal lpIconName As LongPtr) As LongPtr
+Declare PtrSafe Function LoadCursorW Lib "User32" (ByVal hInstance As LongPtr, ByVal lpCursorName As LongPtr) As LongPtr
+Declare PtrSafe Function GetStockObject Lib "Gdi32" (ByVal i As LongPtr) As LongPtr
+Declare PtrSafe Function RegisterClassExW Lib "User32" (ByVal lpWndClass As LongPtr) As LongPtr
+Declare PtrSafe Function CreateWindowExW Lib "User32" (ByVal dwExStyle As LongPtr, ByVal lpClassName As LongPtr, ByVal lpWindowName As LongPtr, ByVal dwStyle As LongPtr, ByVal x As LongPtr, ByVal y As LongPtr, ByVal nWidth As LongPtr, ByVal nHeight As LongPtr, ByVal hWndParent As LongPtr, ByVal hMenu As LongPtr, ByVal hInstance As LongPtr, ByVal lpParam As LongPtr) As LongPtr
+Declare PtrSafe Function ShowWindow Lib "User32" (ByVal hWnd As LongPtr, ByVal nCmdShow As LongPtr) As LongPtr
+Declare PtrSafe Function UpdateWindow Lib "User32" (ByVal hWnd As LongPtr) As LongPtr
+Declare PtrSafe Function SetFocus Lib "User32" (ByVal hWnd As LongPtr) As LongPtr
+Declare PtrSafe Function PeekMessageW Lib "User32" (ByVal lpMsg As LongPtr, ByVal hWnd As LongPtr, ByVal wMsgFilterMin As LongPtr, ByVal wMsgFilterMax As LongPtr, ByVal wRemoveMsg As LongPtr) As LongPtr
+Declare PtrSafe Function TranslateAcceleratorW Lib "User32" (ByVal hWnd As LongPtr, ByVal hAccTable As LongPtr, ByVal lpMsg As LongPtr) As LongPtr
+Declare PtrSafe Function TranslateMessage Lib "User32" (ByVal lpMsg As LongPtr) As LongPtr
+Declare PtrSafe Function DispatchMessageW Lib "User32" (ByVal lpMsg As LongPtr) As LongPtr
+Declare PtrSafe Function SendMessageW Lib "User32" (ByVal hWnd As LongPtr, ByVal Msg As LongPtr, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
+Declare PtrSafe Function GetLastError Lib "Kernel32" () As LongPtr
+'WndProc
+Declare PtrSafe Function MessageBoxW Lib "User32" (ByVal hWnd As LongPtr, ByVal lpText As LongPtr, ByVal lpCaption As LongPtr, ByVal uType As LongPtr) As LongPtr
+Declare PtrSafe Function SetWindowTextW Lib "User32" (ByVal hWnd As LongPtr, ByVal lpString As LongPtr) As LongPtr
+Declare PtrSafe Function GetCursorPos Lib "User32" (ByVal lpPoint As LongPtr) As LongPtr
+'Declare PtrSafe Function CopyMemory Lib "Kernel32" (ByVal Destination As LongPtr, ByVal Source As LongPtr, ByVal Length As LongPtr) As LongPtr
+Declare PtrSafe Function DefWindowProcW Lib "User32" (ByVal hWnd As LongPtr, ByVal Msg As LongPtr, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
+Declare PtrSafe Function DestroyWindow Lib "User32" (ByVal hWnd As LongPtr) As LongPtr
+Declare PtrSafe Function PostQuitMessage Lib "User32" (ByVal nExitCode As LongPtr) As LongPtr
+'PopupMenu
+Declare PtrSafe Function CreateMenu Lib "User32" () As LongPtr
+Declare PtrSafe Function CreatePopupMenu Lib "User32" () As LongPtr
+Declare PtrSafe Function SetMenu Lib "User32" (ByVal hWnd As LongPtr, ByVal hMenu As LongPtr) As LongPtr
+Declare PtrSafe Function DrawMenuBar Lib "User32" (ByVal hWnd As LongPtr) As LongPtr
+Declare PtrSafe Function AppendMenuW Lib "User32" (ByVal hMenu As LongPtr, ByVal uFlags As LongPtr, ByVal uIDNewItem As LongPtr, ByVal lpNewItem As LongPtr) As LongPtr
+'Declare PtrSafe Function CheckMenuItem Lib "User32" (ByVal hMenu As LongPtr, ByVal uIDCheckItem As LongPtr, ByVal uCheck As LongPtr) As LongPtr
+Declare PtrSafe Function CreateAcceleratorTableW Lib "User32" (ByVal paccel As LongPtr, ByVal cAccel As LongPtr) As LongPtr
+Declare PtrSafe Function DestroyAcceleratorTable Lib "User32" (ByVal hAccel As LongPtr) As LongPtr
+'Declare PtrSafe Function DestroyMenu Lib "User32" (ByVal hMenu As LongPtr) As LongPtr
+'StatusBar
+Declare PtrSafe Function InitCommonControlsEx Lib "Comctl32" (ByVal picce As LongPtr) As LongPtr
+'GDI & Paint
+Declare PtrSafe Function GetDC Lib "User32" (ByVal hdc As LongPtr) As LongPtr
+Declare PtrSafe Function ReleaseDC Lib "User32" (ByVal hWnd As LongPtr, ByVal hdc As LongPtr) As LongPtr
+Declare PtrSafe Function DeleteDC Lib "Gdi32" (ByVal hdc As LongPtr) As LongPtr
+Declare PtrSafe Function GetClientRect Lib "User32" (ByVal hWnd As LongPtr, ByVal lpRect As LongPtr) As LongPtr
+Declare PtrSafe Function InvalidateRect Lib "User32" (ByVal hWnd As LongPtr, ByVal lpRect As LongPtr, ByVal bErase As LongPtr) As LongPtr
+Declare PtrSafe Function ChoosePixelFormat Lib "Gdi32" (ByVal hdc As LongPtr, ByVal ppfd As LongPtr) As LongPtr
+Declare PtrSafe Function SetPixelFormat Lib "Gdi32" (ByVal hdc As LongPtr, ByVal format As LongPtr, ByVal ppfd As LongPtr) As LongPtr
+Declare PtrSafe Function SwapBuffers Lib "Gdi32" (ByVal hdc As LongPtr) As LongPtr
+'OpenGL
+Declare PtrSafe Function wglCreateContext Lib "Opengl32" (ByVal hdc As LongPtr) As LongPtr
+Declare PtrSafe Function wglMakeCurrent Lib "Opengl32" (ByVal hdc As LongPtr, ByVal hGLRC As LongPtr) As LongPtr
+Declare PtrSafe Function wglDeleteContext Lib "Opengl32" (ByVal hGLRC As LongPtr) As LongPtr
+Declare PtrSafe Function glViewport Lib "Opengl32" (ByVal x As LongPtr, ByVal y As LongPtr, ByVal Width As LongPtr, ByVal height As LongPtr) As LongPtr
+Declare PtrSafe Function glMatrixMode Lib "Opengl32" (ByVal mode As LongPtr) As LongPtr
+Declare PtrSafe Function glLoadIdentity Lib "Opengl32" () As LongPtr
+Declare PtrSafe Function glLoadMatrixf Lib "Opengl32" (ByVal M As LongPtr) As LongPtr
+Declare PtrSafe Function glMultMatrixf Lib "Opengl32" (ByVal M As LongPtr) As LongPtr
+Declare PtrSafe Function glTranslatef Lib "Opengl32" (ByVal x As Single, ByVal y As Single, ByVal z As Single) As LongPtr
+Declare PtrSafe Function glRotatef Lib "Opengl32" (ByVal angle As Single, ByVal x As Single, ByVal y As Single, ByVal z As Single) As LongPtr
+Declare PtrSafe Function glScalef Lib "Opengl32" (ByVal x As Single, ByVal y As Single, ByVal z As Single) As LongPtr
+Declare PtrSafe Function gluPerspective Lib "Glu32" (ByVal fovy As Double, ByVal aspect As Double, ByVal zNear As Double, ByVal zFar As Double) As LongPtr
+Declare PtrSafe Function glPushMatrix Lib "Opengl32" () As LongPtr
+Declare PtrSafe Function glPopMatrix Lib "Opengl32" () As LongPtr
+Declare PtrSafe Function glGetFloatv Lib "Opengl32" (ByVal pname As LongPtr, ByVal params As LongPtr) As LongPtr
+Declare PtrSafe Function glEnable Lib "Opengl32" (ByVal cap As LongPtr) As LongPtr
+Declare PtrSafe Function glDisable Lib "Opengl32" (ByVal cap As LongPtr) As LongPtr
+Declare PtrSafe Function glHint Lib "Opengl32" (ByVal target As LongPtr, ByVal mode As LongPtr) As LongPtr
+Declare PtrSafe Function glClearColor Lib "Opengl32" (ByVal red As Single, ByVal green As Single, ByVal blue As Single, ByVal alpha As Single) As LongPtr
+Declare PtrSafe Function glClear Lib "Opengl32" (ByVal mask As LongPtr) As LongPtr
+Declare PtrSafe Function glBegin Lib "Opengl32" (ByVal mode As LongPtr) As LongPtr
+Declare PtrSafe Function glEnd Lib "Opengl32" () As LongPtr
+Declare PtrSafe Function glBlendFunc Lib "Opengl32" (ByVal sfactor As LongPtr, ByVal dfactor As LongPtr) As LongPtr
+Declare PtrSafe Function glColor3f Lib "Opengl32" (ByVal red As Single, ByVal green As Single, ByVal blue As Single) As LongPtr
+Declare PtrSafe Function glVertex3f Lib "Opengl32" (ByVal x As Single, ByVal y As Single, ByVal z As Single) As LongPtr
+Declare PtrSafe Function glNormal3fv Lib "Opengl32" (ByVal v As LongPtr) As LongPtr
+Declare PtrSafe Function glShadeModel Lib "Opengl32" (ByVal mode As LongPtr) As LongPtr
+Declare PtrSafe Function glMaterialfv Lib "Opengl32" (ByVal face As LongPtr, ByVal pname As LongPtr, ByVal params As LongPtr) As LongPtr
+Declare PtrSafe Function glLightfv Lib "Opengl32" (ByVal light As LongPtr, ByVal pname As LongPtr, ByVal params As LongPtr) As LongPtr
+Declare PtrSafe Function glFlush Lib "Opengl32" ()
+
+'Structures
+'WNDCLASSEX wcx;
+Type WNDCLASSEX
+    cbSize As Long
+    style As Long
+    lpfnWndProc As LongPtr
+    cbClsExtra As Long
+    cbWndExtra As Long
+    hInstance As LongPtr
+    hIcon As LongPtr
+    hCursor As LongPtr
+    hbrBackground As LongPtr
+    lpszMenuName As LongPtr
+    lpszClassName As LongPtr
+    hIconSm As LongPtr
+End Type
+Public wcx As WNDCLASSEX
+Public lpWndClass As LongPtr 'Pointer
+'POINT pt
+Type POINT2D
+    x As Long
+    y As Long
+End Type
+'MSG msg;
+Type Msg
+    hWnd As LongPtr
+    message As Long
+    wParam As LongPtr
+    lParam As LongPtr
+    time As Long
+    pt As POINT2D
+    lPrivate As LongPtr
+End Type
+Public wmsg As Msg
+Public lpMsg As LongPtr 'Pointer
+'RECT rct
+Type RECT
+    left As Long
+    top As Long
+    right As Long
+    bottom As Long
+End Type
+Public RectWidth As Long
+Public RectHeight As Long
+Public RectAspect As Double
+'PIXELFORMATDESCRIPTOR pfd = { 0 };
+Type PIXELFORMATDESCRIPTOR
+    nSize As Integer
+    nVersion As Integer
+    dwFlags As Long
+    iPixelType As Byte
+    cColorBits As Byte
+    cRedBits As Byte
+    cRedShift As Byte
+    cGreenBits As Byte
+    cGreenShift As Byte
+    cBlueBits As Byte
+    cBlueShift As Byte
+    cAlphaBits As Byte
+    cAlphaShift As Byte
+    cAccumBits As Byte
+    cAccumRedBits As Byte
+    cAccumGreenBits As Byte
+    cAccumBlueBits As Byte
+    cAccumAlphaBits As Byte
+    cDepthBits As Byte
+    cStencilBits As Byte
+    cAuxBuffers As Byte
+    iLayerType As Byte
+    bReserved As Byte
+    dwLayerMask As Long
+    dwVisibleMask As Long
+    dwDamageMask As Long
+End Type
+Public pfd As PIXELFORMATDESCRIPTOR
+Public lpPFD As LongPtr 'Pointer
+'ACCEL accel;
+Type ACCELSTRUCT
+    fVirt As Integer
+    'dummy As Byte
+    key As Integer
+    cmd As Integer
+End Type
+Public accel As ACCELSTRUCT
+Public paccel As LongPtr 'Pointer
+'INITCOMMONCONTROLSEX icce;
+Type ICCESTRUCT
+    dwSize As Long
+    dwICC As Long
+End Type
+Public icce As ICCESTRUCT
+Public lpIcce As LongPtr 'Pointer
+'POINT3D
+Type POINT3D
+    x As Single
+    y As Single
+    z As Single
+End Type
+'POINT4D
+Type POINT4D
+    x As Single
+    y As Single
+    z As Single
+    w As Single
+End Type
+'RGBA
+Type RGBA
+    r As Single
+    g As Single
+    b As Single
+    a As Single
+End Type
+'QUATERNION
+Type QUATERNION
+    x As Single
+    y As Single
+    z As Single
+    w As Single
+End Type
+
+'Const
+Public Const PM_REMOVE = 1
+'Window Styles
+Public Const CS_VREDRAW = 1
+Public Const CS_HREDRAW = 2
+Public Const CS_DBLCLKS = 8
+Public Const IDI_APPLICATION = 32512
+Public Const IDC_ARROW = 32512
+Public Const CW_USEDEFAULT = &H80000000
+Public Const WS_OVERLAPPED = 0
+Public Const WS_CAPTION = &HC00000
+Public Const WS_SYSMENU = &H80000
+Public Const WS_THICKFRAME = &H40000
+Public Const WS_MINIMIZEBOX = &H20000
+Public Const WS_MAXIMIZEBOX = &H10000
+Public Const WS_OVERLAPPEDWINDOW = WS_OVERLAPPED Or WS_CAPTION Or WS_SYSMENU Or WS_THICKFRAME Or WS_MINIMIZEBOX Or WS_MAXIMIZEBOX
+Public Const WS_CLIPCHILDREN = &H2000000
+Public Const WS_CLIPSIBLINGS = &H4000000
+Public Const WS_VISIBLE = &H10000000
+Public Const WS_CHILD = &H40000000
+Public Const SW_SHOW = 5
+'Messages
+Public Const WM_CREATE = 1
+Public Const WM_DESTROY = 2
+Public Const WM_SIZE = 5
+Public Const WM_ACTIVATE = 6
+Public Const WM_CLOSE = &H10
+Public Const WM_QUIT = &H12
+Public Const WM_KEYDOWN = &H100
+Public Const WM_KEYUP = &H101
+Public Const WM_COMMAND = &H111
+Public Const WM_MOUSEMOVE = &H200
+Public Const WM_LBUTTONDOWN = &H201
+Public Const WM_LBUTTONUP = &H202
+Public Const WM_RBUTTONDOWN = &H204
+Public Const WM_RBUTTONUP = &H205
+Public Const WM_MBUTTONDOWN = &H207
+Public Const WM_MBUTTONUP = &H208
+Public Const WM_MBUTTONDBLCLK = &H209
+Public Const WM_MOUSEWHEEL = &H20A
+Public Const WM_USER = &H400
+'Virtual Keys
+Public Const MB_OK = 0
+Public Const MB_YESNO = 4
+Public Const MB_ICONQUESTION = &H20
+Public Const MB_ICONINFORMATION = &H40
+Public Const IDYES = 6
+Public Const IDNO = 7
+Public Const VK_TAB = 9
+Public Const VK_RETURN = &HD
+Public Const VK_SHIFT = &H10
+Public Const VK_ESCAPE = &H1B
+Public Const VK_SPACE = &H20
+Public Const VK_F1 = &H70
+'Brushes
+Public Const GRAY_BRUSH = 2
+'Status Bar
+Public Const ICC_BAR_CLASSES = 4
+Public Const SBARS_SIZEGRIP = &H100
+Public Const SBT_NOBORDERS = &H101 '0x0100
+Public Const SB_SETPARTS = WM_USER + 4 '0x0404
+Public Const SB_SETTEXTW = WM_USER + 11 '0x040B
+'Menu
+Public Const TPM_LEFTALIGN = 0
+Public Const TPM_TOPALIGN = 0
+Public Const TPM_RIGHTBUTTON = 2
+'https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-insertmenua
+Public Const MF_STRING = 0
+Public Const MF_SEPARATOR = &H800
+Public Const MF_ENABLED = 0
+Public Const MF_GRAYED = 1
+Public Const MF_DISABLED = 2
+Public Const MF_UNCHECKED = 0
+Public Const MF_CHECKED = 8
+Public Const MF_POPUP = &H10
+'Accelerators
+Public Const FVIRTKEY = 1
+Public Const FCONTROL = 8
+'OpenGL
+Public Const PFD_SUPPORT_OPENGL = &H20
+Public Const PFD_DOUBLEBUFFER = 1
+Public Const PFD_DRAW_TO_WINDOW = 4
+Public Const PFD_TYPE_RGBA = 0
+Public Const PFD_MAIN_PLANE = 0
+Public Const GL_MODELVIEW = &H1700
+Public Const GL_PROJECTION = &H1701
+Public Const GL_MODELVIEW_MATRIX = &HBA6
+Public Const GL_PROJECTION_MATRIX = &HBA7
+Public Const GL_DEPTH_TEST = &HB71
+Public Const GL_COLOR_BUFFER_BIT = &H4000
+Public Const GL_DEPTH_BUFFER_BIT = &H100
+Public Const GL_NICEST = &H1102
+Public Const GL_POLYGON_SMOOTH = &HB41
+Public Const GL_BLEND = &HBE2
+Public Const GL_PERSPECTIVE_CORRECTION_HINT = &HC50
+Public Const GL_POLYGON_SMOOTH_HINT = &HC53
+Public Const GL_LINES = 1
+Public Const GL_TRIANGLES = 4
+Public Const GL_TRIANGLE_STRIP = 5
+Public Const GL_QUADS = 7
+Public Const GL_QUAD_STRIP = 8
+Public Const GL_SRC_ALPHA = &H302
+Public Const GL_ONE_MINUS_SRC_ALPHA = &H303
+Public Const GL_FRONT = &H404
+Public Const GL_LIGHTING = &HB50
+Public Const GL_AMBIENT = &H1200
+Public Const GL_DIFFUSE = &H1201
+Public Const GL_SPECULAR = &H1202
+Public Const GL_POSITION = &H1203
+Public Const GL_EMISSION = &H1600
+Public Const GL_SHININESS = &H1601
+Public Const GL_AMBIENT_AND_DIFFUSE = &H1602
+Public Const GL_SMOOTH = &H1D01
+Public Const GL_FRONT_AND_BACK = &H408
+Public Const GL_LIGHT0 = &H4000
+Public Const GL_LIGHT1 = &H4001
+Public Const GL_LIGHT2 = &H4002
+
+'Custom Values
+'Numeric
+Public Const PI_OVER_180 = 1.74532925199433E-02
+'Screen
+Public Const DEFAULT_SCREEN_WIDTH = 1024
+Public Const DEFAULT_SCREEN_HEIGHT = 768
+'Menu ID's
+Public Const IDM_APP_EXIT = &H109
+Public Const IDM_HELP_ABOUT = &H901
+
+'Global Handles
+Public ghInst As LongPtr
+Public ghWnd As LongPtr
+'Status Bar
+Public hwndStatusBar As LongPtr
+Public idStatusBar As LongPtr
+Public szStatusClassName As String
+Public lpszStatusClassName As LongPtr
+Public xStatusParts(11) As Long 'Divide Status Bar by 12 parts
+Public lpStatusParts As LongPtr
+'Menu Handles
+Public hMenu As LongPtr
+Public hMenuFile As LongPtr
+Public hMenuHelp As LongPtr
+Public hAccel As LongPtr
+'Menu Text Strings
+Public szMenuFile As String
+Public szMenuFileExit As String
+Public szMenuHelp As String
+Public szMenuHelpAbout As String
+'Menu Text Pointers
+Public lpszMenuFile As LongPtr
+Public lpszMenuFileExit As LongPtr
+Public lpszMenuHelp As LongPtr
+Public lpszMenuHelpAbout As LongPtr
+
+'RBMK Layout
+Public RBMK(0 To 47, 0 To 47) As Byte
+
+'OpenGL
+Public ghDC As LongPtr
+Public ghRC As LongPtr
+Public iPixelFormat As LongPtr
+
+'Cursor Position
+Public xPrevPos As Long, yPrevPos As Long
+Public xCurPos As Long, yCurPos As Long
+Public dxMouse As Long, dyMouse As Long
+'Motion
+Public LinearSpeed As Single
+Public LinearBoost As Single
+Public dStep As Single
+Public AngularSpeed As Single
+Public AngularBoost As Single
+Public dAngle As Single
+
+'Camera Position
+Public camPos As POINT3D
+
+'Quaternions
+Public qModelRot As QUATERNION
+Public qCamRot As QUATERNION
+
+'Matrices
+Public mtxModelViewBuffer(15) As Single
+Public lp_mtxModelViewBuffer As LongPtr
+Public mtxRotationBuffer(15) As Single
+Public lp_mtxRotationBuffer As LongPtr
+
+'Flags
+Public isNotActive As Byte
+Public isInitialPosition As Byte
+Public isRefreshed As Byte
+Public nMouseMode As Integer
+Public nFrame As Long
+
+'Keyboard Buffer
+Public key(255) As Byte
+Public nKeyCode As Integer
+
+'Materials
+Public v3Normal As POINT3D
+Public lpNormal As LongPtr
+
+'Gray
+'Public matGraySpecular As RGBA
+'Public lp_matGraySpecular As LongPtr
+'Public matGrayShininess As Single
+'Public lp_matGrayShininess As LongPtr
+Public matGrayAmbDiff As RGBA
+Public lp_matGrayAmbDiff As LongPtr
+'Green
+'Public matGreenSpecular As RGBA
+'Public lp_matGreenSpecular As LongPtr
+'Public matGreenShininess As Single
+'Public lp_matGreenShininess As LongPtr
+Public matGreenAmbDiff As RGBA
+Public lp_matGreenAmbDiff As LongPtr
+'Yellow
+'Public matYellowSpecular As RGBA
+'Public lp_matYellowSpecular As LongPtr
+'Public matYellowShininess As Single
+'Public lp_matYellowShininess As LongPtr
+Public matYellowAmbDiff As RGBA
+Public lp_matYellowAmbDiff As LongPtr
+'Red
+'Public matRedSpecular As RGBA
+'Public lp_matRedSpecular As LongPtr
+'Public matRedShininess As Single
+'Public lp_matRedShininess As LongPtr
+Public matRedAmbDiff As RGBA
+Public lp_matRedAmbDiff As LongPtr
+'Blue
+'Public matBlueSpecular As RGBA
+'Public lp_matBlueSpecular As LongPtr
+'Public matBlueShininess As Single
+'Public lp_matBlueShininess As LongPtr
+Public matBlueAmbDiff As RGBA
+Public lp_matBlueAmbDiff As LongPtr
+'Cherenkov-Vavilov
+'Public matBlueEmission As RGBA
+'Public lp_matBlueEmission As LongPtr
+
+'Lights
+Public light_position As POINT4D
+Public lp_light_position As LongPtr
+Public light_ambient As RGBA
+Public lp_light_ambient As LongPtr
+Public light_diffuse As RGBA
+Public lp_light_diffuse As LongPtr
+'Public light_specular As RGBA
+'Public lp_light_specular As LongPtr
+
+'Name Strings
+Public szCaption As String
+Public szMsgText As String
+Public szMsgTitle As String
+'Name Pointers
+Public lpszCaption As LongPtr
+Public lpszMsgText As LongPtr
+Public lpszMsgTitle As LongPtr
+'Status Strings
+Public szAxisXX As String
+Public szAxisYX As String
+Public szAxisZX As String
+Public szAxisXY As String
+Public szAxisYY As String
+Public szAxisZY As String
+Public szAxisXZ As String
+Public szAxisYZ As String
+Public szAxisZZ As String
+Public szAxisXW As String
+Public szAxisYW As String
+Public szAxisZW As String
+'Status Pointers
+Public lpszAxisXX As LongPtr
+Public lpszAxisYX As LongPtr
+Public lpszAxisZX As LongPtr
+Public lpszAxisXY As LongPtr
+Public lpszAxisYY As LongPtr
+Public lpszAxisZY As LongPtr
+Public lpszAxisXZ As LongPtr
+Public lpszAxisYZ As LongPtr
+Public lpszAxisZZ As LongPtr
+Public lpszAxisXW As LongPtr
+Public lpszAxisYW As LongPtr
+Public lpszAxisZW As LongPtr
+
+'Debug
+Public nLastError As LongPtr
+
+Sub Start()
+    Dim x As Byte, y As Byte
+    Dim u As Byte, v As Byte
+
+    u = 4
+    v = 51
+    For y = 0 To 47
+        For x = 0 To 47
+            RBMK(x, y) = ActiveSheet.Cells(v, u).Value
+            u = u + 1
+        Next x
+        u = 4
+        v = v - 1
+    Next y
+
+    Call WinMain(0, 0, 0, 0)
+End Sub
+
+Function WinMain(ByVal hInstance As LongPtr, ByVal hPrevInstance As LongPtr, ByVal lpCmdLine As LongPtr, ByVal nCmdShow As LongPtr)
+'Debug
+    Dim nWndClass As LongPtr 'For Debug Purpose
+
+'Pointers
+    lpWndClass = VarPtr(wcx)
+    lpMsg = VarPtr(wmsg)
+
+    wcx.cbSize = Len(wcx)
+    wcx.style = CS_HREDRAW Or CS_VREDRAW Or CS_DBLCLKS
+    wcx.lpfnWndProc = GetAddr(AddressOf WndProc)
+    wcx.cbClsExtra = 0
+    wcx.cbWndExtra = 0
+    wcx.hInstance = GetModuleHandleW(0)
+    If wcx.hInstance = 0 Then
+        Call MsgBox("GetModuleHandle Error: " & GetLastError())
+        Exit Function
+    Else
+        ghInst = wcx.hInstance
+    End If
+    wcx.hIcon = LoadIconW(0, IDI_APPLICATION)
+    wcx.hCursor = LoadCursorW(0, IDC_ARROW)
+    wcx.hbrBackground = GetStockObject(GRAY_BRUSH)
+    wcx.lpszMenuName = 0
+    wcx.lpszClassName = StrPtr("MainWindowClassName")
+    wcx.hIconSm = wcx.hIcon
+
+    nWndClass = RegisterClassExW(lpWndClass)
+    If nWndClass = 0 Then
+        nLastError = GetLastError()
+        If nLastError = 1410 Then
+            'Call MsgBox("RegisterClass Error 1410 (0x582): ERROR_CLASS_ALREADY_EXISTS")
+        Else
+            Call MsgBox("RegisterClass Error: " & nLastError)
+            Exit Function
+        End If
+    End If
+
+    szCaption = "VBA WinAPI OpenGL Demo"
+    lpszCaption = StrPtr(szCaption)
+    ghWnd = CreateWindowExW(0, wcx.lpszClassName, lpszCaption, WS_OVERLAPPEDWINDOW Or WS_CLIPSIBLINGS Or WS_CLIPCHILDREN, CW_USEDEFAULT, CW_USEDEFAULT, DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT, 0, 0, wcx.hInstance, 0)
+    If ghWnd = 0 Then
+        Call MsgBox("CreateWindow Error: " & GetLastError())
+        Exit Function
+    End If
+
+    Call Initialize
+
+    Call ShowWindow(ghWnd, SW_SHOW)
+    Call UpdateWindow(ghWnd)
+    Call SetFocus(ghWnd)
+
+WinMainLoop:
+    ' Always process pending messages first
+    While PeekMessageW(lpMsg, 0, 0, 0, PM_REMOVE) <> 0
+        If wmsg.message = WM_QUIT Then
+            WinMain = wmsg.wParam
+            Exit Function
+        End If
+        If TranslateAcceleratorW(ghWnd, hAccel, lpMsg) = 0 Then
+            Call TranslateMessage(lpMsg)
+            Call DispatchMessageW(lpMsg)
+        End If
+    Wend
+    ' Only draw when no messages and window is active
+    If isNotActive = 0 Then Call DrawGLScene
+    GoTo WinMainLoop
+End Function
+
+Function WndProc(ByVal hWnd As LongPtr, ByVal message As LongPtr, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
+Dim tbRot As QUATERNION, tabQ As QUATERNION
+Dim moveVec As POINT3D, stepVec As POINT3D
+Dim rawDelta As Long
+Dim angleTab As Single
+
+Select Case message
+    Case WM_MOUSEMOVE
+        GoTo lbl_wmMouseMove
+    Case WM_KEYDOWN
+        GoTo lbl_wmKeyDown
+    Case WM_KEYUP
+        GoTo lbl_wmKeyUp
+    Case WM_MBUTTONDOWN
+        GoTo lbl_wmMButtonDown
+    Case WM_MBUTTONUP
+        GoTo lbl_wmMButtonUp
+    Case WM_LBUTTONDOWN
+        GoTo lbl_wmLButtonDown
+    Case WM_LBUTTONUP
+        GoTo lbl_wmLButtonUp
+     Case WM_RBUTTONDOWN
+        GoTo lbl_wmRButtonDown
+    Case WM_RBUTTONUP
+        GoTo lbl_wmRButtonUp
+    Case WM_MBUTTONDBLCLK
+        GoTo lbl_wmMButtonDblClk
+    Case WM_MOUSEWHEEL
+        GoTo lbl_wmMouseWheel
+    Case WM_COMMAND
+        GoTo lbl_wmCommand
+    Case WM_ACTIVATE
+        GoTo lbl_wmActivate
+    Case WM_SIZE
+        GoTo lbl_wmSize
+    Case WM_CLOSE
+        GoTo lbl_wmClose
+    Case WM_DESTROY
+        GoTo lbl_wmDestroy
+End Select
+
+'If None of the Above Then Pass to Default
+lbl_DefWndProc:
+    WndProc = DefWindowProcW(hWnd, message, wParam, lParam)
+    Exit Function
+
+'Proceed Received Messages
+lbl_wmSize:
+    RectWidth = CLng(lParam And 32767) 'Low Word, Signed Integer
+    RectHeight = CLng(lParam / 65536) 'High Word
+    Call GLResize
+    GoTo lbl_WndProc_Return0
+
+lbl_wmActivate:
+    ' The low word of wParam contains the activation flag
+    ' WA_INACTIVE = 0, WA_ACTIVE = 1, WA_CLICKACTIVE = 2
+    isNotActive = IIf((wParam And &HFFFF&) = 0, 1, 0)
+    GoTo lbl_WndProc_Return0
+
+lbl_wmKeyDown:
+    nKeyCode = CLng(wParam And 32767) 'Low Word, Signed Integer
+    key(nKeyCode) = 1
+    Select Case nKeyCode 'For single (not continuous) KeyStrokes
+        Case VK_TAB
+            If key(VK_SHIFT) = 0 Then
+                angleTab = 30#
+            Else
+                angleTab = 30# * 2
+            End If
+            tabQ = QuatFromAxisAngle(0, 0, 1, angleTab)
+            Call MulQbyQ(tabQ, qModelRot, qModelRot)
+            Call UpdateModelview
+        Case VK_RETURN 'Enter
+            Call AboutProc
+        Case VK_SPACE
+            Call ReSetView
+        Case VK_ESCAPE
+            If isInitialPosition = 0 Then
+                Call ReSetView
+            Else
+                Call SendMessageW(ghWnd, WM_CLOSE, 0, 0)
+            End If
+        Case VK_F1
+            Call AboutProc
+        End Select
+    GoTo lbl_WndProc_Return0
+
+lbl_wmKeyUp:
+    nKeyCode = CLng(wParam And 32767) 'Low Word, Signed Integer
+    key(nKeyCode) = 0
+    GoTo lbl_WndProc_Return0
+
+lbl_wmMouseMove:
+    xCurPos = CLng(lParam) And 32767
+    yCurPos = CLng(lParam) / 65536
+    dxMouse = xPrevPos - xCurPos
+    dyMouse = yPrevPos - yCurPos
+    If nMouseMode = 1 Then   ' LMB – rotate model (local axes)
+        Call TrackballRotation(xPrevPos, yPrevPos, xCurPos, yCurPos, RectWidth, RectHeight, tbRot)
+        'Right-multiply: qModelRot = tbRot * qModelRot
+        Call MulQbyQ(tbRot, qModelRot, qModelRot)
+        Call UpdateModelview
+    ElseIf nMouseMode = 2 Then
+        'Horizontal movement (dx) -> right/left in camera space
+        moveVec.x = dxMouse * (-8)   ' sign to match original behaviour
+        moveVec.y = 0
+        moveVec.z = 0
+        moveVec = RotateVectorByQuaternion(moveVec, qCamRot)
+        camPos.x = camPos.x + moveVec.x
+        camPos.y = camPos.y + moveVec.y
+        camPos.z = camPos.z + moveVec.z
+        'Vertical movement (dy) -> up/down in camera space
+        moveVec.x = 0
+        moveVec.y = dyMouse * 16
+        moveVec.z = 0
+        moveVec = RotateVectorByQuaternion(moveVec, qCamRot)
+        camPos.x = camPos.x + moveVec.x
+        camPos.y = camPos.y + moveVec.y
+        camPos.z = camPos.z + moveVec.z
+        Call UpdateModelview
+    ElseIf nMouseMode = 3 Then   ' RMB – rotate camera (world axes)
+        Call TrackballRotation(xPrevPos, yPrevPos, xCurPos, yCurPos, RectWidth, RectHeight, tbRot)
+        'Left-multiply: qCamRot = tbRot * qCamRot
+        Call MulQbyQ(tbRot, qCamRot, qCamRot)
+        Call UpdateModelview
+    End If
+    xPrevPos = xCurPos
+    yPrevPos = yCurPos
+    GoTo lbl_WndProc_Return0
+
+lbl_wmLButtonDown:
+    nMouseMode = 1
+    isInitialPosition = 0
+    xPrevPos = CLng(lParam And 32767) 'Low Word, Signed Integer
+    yPrevPos = CLng(lParam / 65536) 'High Word
+    GoTo lbl_WndProc_Return0
+lbl_wmLButtonUp:
+    nMouseMode = 0
+    GoTo lbl_WndProc_Return0
+
+lbl_wmRButtonDown:
+    nMouseMode = 3
+    isInitialPosition = 0
+    xPrevPos = CLng(lParam And 32767) 'Low Word, Signed Integer
+    yPrevPos = CLng(lParam / 65536) 'High Word
+    GoTo lbl_WndProc_Return0
+lbl_wmRButtonUp:
+    nMouseMode = 0
+    GoTo lbl_WndProc_Return0
+
+lbl_wmMButtonDown:
+    nMouseMode = 2
+    isInitialPosition = 0
+    xPrevPos = CLng(lParam And 32767) 'Low Word, Signed Integer
+    yPrevPos = CLng(lParam / 65536) 'High Word
+    GoTo lbl_WndProc_Return0
+lbl_wmMButtonUp:
+    nMouseMode = 0
+    GoTo lbl_WndProc_Return0
+
+lbl_wmMButtonDblClk:
+    Call ReSetView
+    GoTo lbl_WndProc_Return0
+
+lbl_wmMouseWheel:
+    isInitialPosition = 0
+    rawDelta = CLng(wParam \ 65536) And &HFFFF&
+    If rawDelta > 32767 Then rawDelta = rawDelta - 65536
+    dStep = LinearSpeed * IIf(rawDelta > 0, -10, 10)
+    stepVec.x = 0
+    stepVec.y = 0
+    stepVec.z = dStep
+    stepVec = RotateVectorByQuaternion(stepVec, qCamRot)
+    camPos.x = camPos.x + stepVec.x
+    camPos.y = camPos.y + stepVec.y
+    camPos.z = camPos.z + stepVec.z
+    Call UpdateModelview
+    GoTo lbl_WndProc_Return0
+
+lbl_wmCommand:
+    Select Case CLng(wParam And 32767) 'Low Word, Signed Integer
+        Case IDM_APP_EXIT
+            Call CloseWndProc
+        Case IDM_HELP_ABOUT
+            Call AboutProc
+    End Select
+    GoTo lbl_WndProc_Return0
+
+lbl_wmClose:
+    Call CloseWndProc
+    GoTo lbl_WndProc_Return0
+
+lbl_wmDestroy:
+    ' Clean up OpenGL and GDI resources
+    Call wglMakeCurrent(0, 0)
+    If ghRC <> 0 Then Call wglDeleteContext(ghRC)
+    If ghDC <> 0 Then Call ReleaseDC(ghWnd, ghDC)
+    If hAccel <> 0 Then Call DestroyAcceleratorTable(hAccel)
+    Call PostQuitMessage(0)
+lbl_WndProc_Return0:
+    WndProc = 0
+End Function
+
+Function GetAddr(ByVal lpProc As LongPtr) As LongPtr
+    'This Function has been created to fit the 'AddressOf' syntax
+    GetAddr = lpProc
+End Function
+
+Function Initialize()
+    nFrame = 0
+    nMouseMode = 0
+    RectAspect = 1# 'Safe default
+    Call DoCreateMenu
+    Call DoCreateStatusBar
+    Call InitializeGL
+    Call ReSetView
+End Function
+
+Function DoCreateMenu()
+'Menu Text  Strings
+    szMenuFile = "&File"
+    szMenuFileExit = "E&xit" + vbTab + "Ctrl+W"
+    szMenuHelp = "&Help"
+    szMenuHelpAbout = "&About..."
+'Menu Text Pointers
+    lpszMenuFile = StrPtr(szMenuFile)
+    lpszMenuFileExit = StrPtr(szMenuFileExit)
+    lpszMenuHelp = StrPtr(szMenuHelp)
+    lpszMenuHelpAbout = StrPtr(szMenuHelpAbout)
+'Main Menu
+    hMenu = CreateMenu()
+    hMenuFile = CreatePopupMenu()
+    Call AppendMenuW(hMenu, MF_POPUP, hMenuFile, lpszMenuFile)
+        Call AppendMenuW(hMenuFile, MF_STRING, IDM_APP_EXIT, lpszMenuFileExit)
+    hMenuHelp = CreatePopupMenu()
+    Call AppendMenuW(hMenu, MF_POPUP, hMenuHelp, lpszMenuHelp)
+        Call AppendMenuW(hMenuHelp, MF_STRING, IDM_HELP_ABOUT, lpszMenuHelpAbout)
+    Call SetMenu(ghWnd, hMenu)
+    Call DrawMenuBar(ghWnd)
+'ACCEL accel;
+    accel.fVirt = FVIRTKEY Or FCONTROL
+    'accel.dummy = 0
+    accel.key = &H57 'W
+    accel.cmd = IDM_APP_EXIT
+    paccel = VarPtr(accel)
+    hAccel = CreateAcceleratorTableW(paccel, 1)
+End Function
+
+Function DoCreateStatusBar()
+    'https://learn.microsoft.com/en-us/windows/win32/winauto/status-bar-control
+    icce.dwSize = Len(icce)
+    icce.dwICC = ICC_BAR_CLASSES
+    lpIcce = VarPtr(icce)
+    Call InitCommonControlsEx(lpIcce)
+    szStatusClassName = "msctls_statusbar32" '"STATUSCLASSNAMEW"
+    lpszStatusClassName = StrPtr(szStatusClassName)
+    idStatusBar = 1 'Child window identifier for Status Bar
+    hwndStatusBar = CreateWindowExW(0, lpszStatusClassName, 0, SBARS_SIZEGRIP Or WS_CHILD Or WS_VISIBLE, 0, 0, 0, 0, ghWnd, idStatusBar, ghInst, 0)
+    If hwndStatusBar = 0 Then
+        Call MsgBox("Status Bar Error: " & GetLastError())
+        Exit Function
+    End If
+End Function
+
+Function InitializeGL()
+    Dim i As Integer
+    For i = 0 To 255
+        key(i) = 0
+    Next i
+'PIXELFORMATDESCRIPTOR pfd
+    pfd.nSize = Len(pfd) 'sizeof( PIXELFORMATDESCRIPTOR )
+    pfd.nVersion = 1 'always 1
+    pfd.dwFlags = PFD_SUPPORT_OPENGL Or PFD_DOUBLEBUFFER Or PFD_DRAW_TO_WINDOW
+    pfd.iPixelType = PFD_TYPE_RGBA
+    pfd.cColorBits = 24
+    pfd.cRedBits = 0
+    pfd.cRedShift = 0
+    pfd.cGreenBits = 0
+    pfd.cGreenShift = 0
+    pfd.cBlueBits = 0
+    pfd.cBlueShift = 0
+    pfd.cAlphaBits = 0
+    pfd.cAlphaShift = 0
+    pfd.cAccumBits = 0
+    pfd.cAccumRedBits = 0
+    pfd.cAccumGreenBits = 0
+    pfd.cAccumBlueBits = 0
+    pfd.cAccumAlphaBits = 0
+    pfd.cDepthBits = 32
+    pfd.cStencilBits = 0
+    pfd.cAuxBuffers = 0
+    pfd.iLayerType = PFD_MAIN_PLANE
+    pfd.bReserved = 0
+    pfd.dwLayerMask = 0
+    pfd.dwVisibleMask = 0
+    pfd.dwDamageMask = 0
+    lpPFD = VarPtr(pfd)
+
+    ghDC = GetDC(ghWnd)
+
+    iPixelFormat = ChoosePixelFormat(ghDC, lpPFD)
+    If iPixelFormat = 0 Then
+        MsgBox ("ChoosePixelFormat Error: " & GetLastError())
+    End If
+
+    Call SetPixelFormat(ghDC, iPixelFormat, lpPFD)
+
+    ghRC = wglCreateContext(ghDC)
+    If ghRC = 0 Then
+        nLastError = GetLastError()
+        If nLastError = 2000 Then
+            MsgBox ("wglCreateContext Error 2000 (0x7D0): ERROR_INVALID_PIXEL_FORMAT")
+        Else
+            MsgBox ("wglCreateContext Error: " & nLastError)
+        End If
+    End If
+
+    Call wglMakeCurrent(ghDC, ghRC)
+    
+    Call glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    Call glEnable(GL_BLEND)
+    Call glEnable(GL_DEPTH_TEST)
+    Call glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
+    'Call glEnable(GL_POLYGON_SMOOTH) 'Outlines
+    Call glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST)
+
+'Camera Position
+    camPos.x = 0
+    camPos.y = 1500
+    camPos.z = -9000
+
+'Quaternions
+    qModelRot.x = 0
+    qModelRot.y = 0
+    qModelRot.z = 0
+    qModelRot.w = 1
+    qCamRot.x = 0
+    qCamRot.y = 0
+    qCamRot.z = 0
+    qCamRot.w = 1
+'MatrixBuffers
+    lp_mtxModelViewBuffer = VarPtr(mtxModelViewBuffer(0))
+    lp_mtxRotationBuffer = VarPtr(mtxRotationBuffer(0))
+
+'Normal Vector
+    lpNormal = VarPtr(v3Normal)
+'Gray
+    'matGraySpecular.r = 0.65
+    'matGraySpecular.g = 0.65
+    'matGraySpecular.b = 0.65
+    'matGraySpecular.a = 1
+    'lp_matGraySpecular = VarPtr(matGraySpecular)
+    'matGrayShininess = 64# '0.0 to 128.0
+    'lp_matGrayShininess = VarPtr(matGrayShininess)
+    matGrayAmbDiff.r = 0.65
+    matGrayAmbDiff.g = 0.65
+    matGrayAmbDiff.b = 0.65
+    matGrayAmbDiff.a = 1
+    lp_matGrayAmbDiff = VarPtr(matGrayAmbDiff)
+'Green
+    'matGreenSpecular.r = 0.15
+    'matGreenSpecular.g = 0.75
+    'matGreenSpecular.b = 0.15
+    'matGreenSpecular.a = 1
+    'lp_matGreenSpecular = VarPtr(matGreenSpecular)
+    'matGreenShininess = 64# '0.0 to 128.0
+    'lp_matGreenShininess = VarPtr(matGreenShininess)
+    matGreenAmbDiff.r = 0.15
+    matGreenAmbDiff.g = 0.75
+    matGreenAmbDiff.b = 0.15
+    matGreenAmbDiff.a = 1
+    lp_matGreenAmbDiff = VarPtr(matGreenAmbDiff)
+'Yellow
+    'matYellowSpecular.r = 0.85
+    'matYellowSpecular.g = 0.85
+    'matYellowSpecular.b = 0.15
+    'matYellowSpecular.a = 1
+    'lp_matYellowSpecular = VarPtr(matYellowSpecular)
+    'matYellowShininess = 64# '0.0 to 128.0
+    'lp_matYellowShininess = VarPtr(matYellowShininess)
+    matYellowAmbDiff.r = 0.85
+    matYellowAmbDiff.g = 0.85
+    matYellowAmbDiff.b = 0.15
+    matYellowAmbDiff.a = 1
+    lp_matYellowAmbDiff = VarPtr(matYellowAmbDiff)
+'Red
+    'matRedSpecular.r = 0.85
+    'matRedSpecular.g = 0.15
+    'matRedSpecular.b = 0.15
+    'matRedSpecular.a = 1
+    'lp_matRedSpecular = VarPtr(matRedSpecular)
+    'matRedShininess = 64# '0.0 to 128.0
+    'lp_matRedShininess = VarPtr(matRedShininess)
+    matRedAmbDiff.r = 0.85
+    matRedAmbDiff.g = 0.15
+    matRedAmbDiff.b = 0.15
+    matRedAmbDiff.a = 1
+    lp_matRedAmbDiff = VarPtr(matRedAmbDiff)
+'Blue
+    'matBlueSpecular.r = 0.25
+    'matBlueSpecular.g = 0.4
+    'matBlueSpecular.b = 0.85
+    'matBlueSpecular.a = 1
+    'lp_matBlueSpecular = VarPtr(matBlueSpecular)
+    'matBlueShininess = 64# '0.0 to 128.0
+    'lp_matBlueShininess = VarPtr(matBlueShininess)
+    matBlueAmbDiff.r = 0.25
+    matBlueAmbDiff.g = 0.4
+    matBlueAmbDiff.b = 0.85
+    matBlueAmbDiff.a = 1
+    lp_matBlueAmbDiff = VarPtr(matBlueAmbDiff)
+'Cherenkov-Vavilov
+    'matBlueEmission.r = 0.05
+    'matBlueEmission.g = 0.075
+    'matBlueEmission.b = 0.099
+    'matBlueEmission.a = 1
+    'lp_matBlueEmission = VarPtr(matBlueEmission)
+'Lights
+    light_position.x = -2000
+    light_position.y = -1000
+    light_position.z = 2000
+    light_position.w = 1
+    lp_light_position = VarPtr(light_position)
+    light_ambient.r = 0.4
+    light_ambient.g = 0.4
+    light_ambient.b = 0.35
+    light_ambient.a = 0
+    lp_light_ambient = VarPtr(light_ambient)
+    light_diffuse.r = 0.4
+    light_diffuse.g = 0.4
+    light_diffuse.b = 0.35
+    light_diffuse.a = 0
+    lp_light_diffuse = VarPtr(light_diffuse)
+    'light_specular.r = 0.001
+    'light_specular.g = 0.001
+    'light_specular.b = 0.001
+    'light_specular.a = 1
+    'lp_light_specular = VarPtr(light_specular)
+
+End Function
+
+Sub TrackballRotation(ByVal prevX As Long, ByVal prevY As Long, ByVal currX As Long, ByVal currY As Long, ByVal winW As Long, ByVal winH As Long, ByRef qOut As QUATERNION)
+    Dim p1 As POINT3D, p2 As POINT3D
+    Dim axis As POINT3D
+    Dim angle As Single
+    Dim norm As Single, dot As Single
+    Dim radius As Single
+    
+    If winW = 0 Or winH = 0 Then
+        qOut.x = 0
+        qOut.y = 0
+        qOut.z = 0
+        qOut.w = 1
+        Exit Sub
+    End If
+    
+    'Map to range [-1..1] and adjust for aspect ratio
+    radius = 1#
+    p1.x = (2 * prevX - winW) / winW
+    p1.y = (winH - 2 * prevY) / winH   ' flip Y
+    p2.x = (2 * currX - winW) / winW
+    p2.y = (winH - 2 * currY) / winH
+    
+    'Project a 2D screen point onto a 3D unit sphere (trackball)
+    p1 = ProjectToSphere(p1.x, p1.y, radius)
+    p2 = ProjectToSphere(p2.x, p2.y, radius)
+    
+    ' Direct quaternion from two vectors
+    qOut = QuatFromTwoVectors(p1, p2)
+End Sub
+
+Function ProjectToSphere(ByVal x As Single, ByVal y As Single, ByVal radius As Single) As POINT3D
+    Dim z As Single
+    Dim r2 As Single
+    r2 = x * x + y * y
+    If r2 <= radius * radius / 2 Then
+        z = Sqr(radius * radius - r2)
+    Else
+        'Use hyperbolic sheet for points outside the sphere
+        z = (radius * radius / 2) / Sqr(r2)
+    End If
+    ProjectToSphere.x = x
+    ProjectToSphere.y = y
+    ProjectToSphere.z = z
+End Function
+
+Function QuatFromTwoVectors(ByRef p As POINT3D, ByRef c As POINT3D) As QUATERNION
+    Dim dot As Single, ax As Single, ay As Single, az As Single
+    Dim vecLen As Single, lenSq As Single, w As Single, norm As Single
+
+    dot = p.x * c.x + p.y * c.y + p.z * c.z
+    ax = p.y * c.z - p.z * c.y
+    ay = p.z * c.x - p.x * c.z
+    az = p.x * c.y - p.y * c.x
+    lenSq = ax * ax + ay * ay + az * az
+
+    If lenSq > 0.0001 Then
+        w = 1 + dot
+        vecLen = Sqr(lenSq)
+        norm = 1 / Sqr(w * w + lenSq)
+        QuatFromTwoVectors.x = ax * norm
+        QuatFromTwoVectors.y = ay * norm
+        QuatFromTwoVectors.z = az * norm
+        QuatFromTwoVectors.w = w * norm
+    Else
+        ' Parallel vectors – no rotation
+        QuatFromTwoVectors.x = 0
+        QuatFromTwoVectors.y = 0
+        QuatFromTwoVectors.z = 0
+        QuatFromTwoVectors.w = 1
+    End If
+End Function
+
+Sub CvtQtoM(ByRef q As QUATERNION)
+    ' Converts a unit quaternion to a 4x4 rotation matrix (column-major)
+    ' Results stored in global mtxRotationBuffer for OpenGL
+    
+    Dim xx As Single, yy As Single, zz As Single
+    Dim xy As Single, xz As Single, yz As Single
+    Dim wx As Single, wy As Single, wz As Single
+    
+    xx = q.x * q.x
+    yy = q.y * q.y
+    zz = q.z * q.z
+    xy = q.x * q.y
+    xz = q.x * q.z
+    yz = q.y * q.z
+    wx = q.w * q.x
+    wy = q.w * q.y
+    wz = q.w * q.z
+    
+    mtxRotationBuffer(0) = 1 - 2 * (yy + zz)
+    mtxRotationBuffer(1) = 2 * (xy + wz)
+    mtxRotationBuffer(2) = 2 * (xz - wy)
+    mtxRotationBuffer(3) = 0
+    
+    mtxRotationBuffer(4) = 2 * (xy - wz)
+    mtxRotationBuffer(5) = 1 - 2 * (xx + zz)
+    mtxRotationBuffer(6) = 2 * (yz + wx)
+    mtxRotationBuffer(7) = 0
+    
+    mtxRotationBuffer(8) = 2 * (xz + wy)
+    mtxRotationBuffer(9) = 2 * (yz - wx)
+    mtxRotationBuffer(10) = 1 - 2 * (xx + yy)
+    mtxRotationBuffer(11) = 0
+    
+    mtxRotationBuffer(12) = 0
+    mtxRotationBuffer(13) = 0
+    mtxRotationBuffer(14) = 0
+    mtxRotationBuffer(15) = 1
+End Sub
+
+Function MulQbyQ(ByRef q0 As QUATERNION, ByRef q1 As QUATERNION, ByRef qHamilton As QUATERNION) As LongPtr
+    ' Computes qHamilton = q0 * q1 (Hamilton product)
+    Dim xx As Single, yy As Single, zz As Single, ww As Single
+    Dim norm As Single
+    
+    xx = q0.w * q1.x + q0.x * q1.w + q0.y * q1.z - q0.z * q1.y
+    yy = q0.w * q1.y - q0.x * q1.z + q0.y * q1.w + q0.z * q1.x
+    zz = q0.w * q1.z + q0.x * q1.y - q0.y * q1.x + q0.z * q1.w
+    ww = q0.w * q1.w - q0.x * q1.x - q0.y * q1.y - q0.z * q1.z
+    
+    norm = Sqr(xx * xx + yy * yy + zz * zz + ww * ww)
+    If norm > 0 Then
+        qHamilton.x = xx / norm
+        qHamilton.y = yy / norm
+        qHamilton.z = zz / norm
+        qHamilton.w = ww / norm
+    Else
+        qHamilton.x = 0: qHamilton.y = 0: qHamilton.z = 0: qHamilton.w = 1
+    End If
+    
+    MulQbyQ = VarPtr(qHamilton)
+End Function
+
+Function ReSetView()
+'Set Values
+    If Len(ghInst) = 4 Then
+        LinearSpeed = 20 '32-bit Systems are Faster
+        AngularSpeed = 1
+    Else
+        LinearSpeed = 50 '64-bit Systems are Slower
+        AngularSpeed = 2
+    End If
+    LinearBoost = 10
+    AngularBoost = 10
+'Reset camera position to default
+    camPos.x = 0
+    camPos.y = 1500
+    camPos.z = -9000
+'Reset orientations
+    qModelRot.x = 0
+    qModelRot.y = 0
+    qModelRot.z = 0
+    qModelRot.w = 1
+    qCamRot.x = 0
+    qCamRot.y = 0
+    qCamRot.z = 0
+    qCamRot.w = 1
+'Rebuild matrices
+    Call UpdateProjection
+    Call UpdateModelview
+'Set Flags
+    isInitialPosition = 1
+    nMouseMode = 0 'Reset mouse mode – prevents unwanted rotation after ESC
+End Function
+
+Function UpdateProjection()
+    Call glMatrixMode(GL_PROJECTION)
+    Call glLoadIdentity
+    Call gluPerspective(90, RectAspect, 1, 1000000)
+End Function
+
+Function UpdateModelview()
+    Call glMatrixMode(GL_MODELVIEW)
+    Call glLoadIdentity
+'1) Camera orientation (world rotation)
+    Call CvtQtoM(qCamRot)
+    Call glMultMatrixf(lp_mtxRotationBuffer)
+'2) Camera position and tilt
+    Call glTranslatef(camPos.x, camPos.y, camPos.z)
+    Call glRotatef(300, 1, 0, 0)   ' fixed camera tilt
+'3) Model orientation
+    Call CvtQtoM(qModelRot)
+    Call glMultMatrixf(lp_mtxRotationBuffer)
+'4) Fixed initial model rotation
+    Call glRotatef(20, 0, 0, 1)
+'Set Flags
+    isRefreshed = 0
+End Function
+
+Function GLResize()
+    Dim i As Long
+    If RectHeight > 0 Then
+        RectAspect = RectWidth / RectHeight
+    Else
+        RectAspect = 1#
+    End If
+'Main Viewport
+    Call glViewport(0, 0, RectWidth, RectHeight)
+'Rebuild matrices
+    Call UpdateProjection
+    Call UpdateModelview
+'Status Bar Proportions
+    For i = 0 To 10
+        xStatusParts(i) = (i + 1) * CInt(RectWidth / 12)
+    Next i
+    xStatusParts(11) = -1
+    lpStatusParts = VarPtr(xStatusParts(0))
+    Call SendMessageW(hwndStatusBar, WM_SIZE, 0, 0)
+    Call SendMessageW(hwndStatusBar, SB_SETPARTS, 12, lpStatusParts)
+End Function
+
+Function AboutProc()
+    szMsgText = _
+    "Mouse Input:" & Chr(13) & _
+    "Left Mouse Button - Rotate the Model" & Chr(13) & _
+    "Press Mouse Wheel - Move Up and Down, Left and Right" & Chr(13) & _
+    "Right Mouse Button - Rotate the Camera" & Chr(13) & _
+    "Mouse Scroll - Move Forward and Backward" & Chr(13) & Chr(13) & _
+    "Keyboard Input:" & Chr(13) & _
+    "Arrow Up - Move Forward" & Chr(13) & _
+    "Arrow Down - Move Backward" & Chr(13) & _
+    "Arrow Left - Move Left" & Chr(13) & _
+    "Arrow Right - Move Right" & Chr(13) & _
+    "Page Up - Move Up" & Chr(13) & _
+    "Page Down - Move Down" & Chr(13) & Chr(13) & _
+    "Model Rotation:" & Chr(13) & _
+    "W - Tilt the Model Forward" & Chr(13) & _
+    "S - Tilt the Model Backward" & Chr(13) & _
+    "A - Turn the Model Left" & Chr(13) & _
+    "D - Turn the Model Right" & Chr(13) & _
+    "Q - Turn the Model Counter-Clockwise" & Chr(13) & _
+    "E - Turn the Model Clockwise" & Chr(13) & Chr(13) & _
+    "Tab - Turn the Model Clockwise Quick" & Chr(13) & Chr(13) & _
+    "Shift - Boost"
+    lpszMsgText = StrPtr(szMsgText)
+    szMsgTitle = "Manual"
+    lpszMsgTitle = StrPtr(szMsgTitle)
+    Call MessageBoxW(ghWnd, lpszMsgText, lpszMsgTitle, MB_OK Or MB_ICONINFORMATION)
+End Function
+
+Function CloseWndProc()
+    szMsgText = "Close?"
+    lpszMsgText = StrPtr(szMsgText)
+    szMsgTitle = "VBA WinAPI OpenGL Demo Application"
+    lpszMsgTitle = StrPtr(szMsgTitle)
+    If MessageBoxW(ghWnd, lpszMsgText, lpszMsgTitle, MB_YESNO Or MB_ICONQUESTION) = IDYES Then
+        Call DestroyWindow(ghWnd)   ' This sends WM_DESTROY, where we clean up
+    End If
+End Function
+
+Function DrawGLScene()
+    Call CheckKeys
+    If isRefreshed = 0 Then
+        Call RefreshStatus
+        Call glClear(GL_COLOR_BUFFER_BIT Or GL_DEPTH_BUFFER_BIT)
+        Call DrawAxes
+        Call DrawObject
+        Call SwapBuffers(ghDC)
+        isRefreshed = 1
+        nFrame = nFrame + 1
+        szCaption = "VBA WinAPI OpenGL Demo" & " - [Frame " & nFrame & "]"
+        lpszCaption = StrPtr(szCaption)
+        Call SetWindowTextW(ghWnd, lpszCaption)
+    End If
+End Function
+
+Function CheckKeys() 'For Continuous KeyStrokes
+Dim kq As QUATERNION
+Dim stepVec As POINT3D
+
+'Return to Normal Speed
+    dStep = LinearSpeed
+    dAngle = AngularSpeed
+'Boost
+If key(&H10) <> 0 Then  'Shift
+    dStep = dStep * LinearBoost
+    dAngle = dAngle * AngularBoost
+End If
+
+'Model Rotation using quaternions (keyboard)
+If key(&H57) <> 0 Then  ' W – tilt down (rotate around X)
+    kq = QuatFromAxisAngle(1, 0, 0, -dAngle)
+    Call MulQbyQ(kq, qModelRot, qModelRot)   ' right-multiply
+    isInitialPosition = 0
+    Call UpdateModelview
+End If
+If key(&H53) <> 0 Then  ' S – tilt up
+    kq = QuatFromAxisAngle(1, 0, 0, dAngle)
+    Call MulQbyQ(kq, qModelRot, qModelRot)
+    isInitialPosition = 0
+    Call UpdateModelview
+End If
+If key(&H41) <> 0 Then  ' A – turn clockwise (around Z)
+    kq = QuatFromAxisAngle(0, 0, 1, -dAngle)
+    Call MulQbyQ(kq, qModelRot, qModelRot)
+    isInitialPosition = 0
+    Call UpdateModelview
+End If
+If key(&H44) <> 0 Then  ' D – turn counter-clockwise
+    kq = QuatFromAxisAngle(0, 0, 1, dAngle)
+    Call MulQbyQ(kq, qModelRot, qModelRot)
+    isInitialPosition = 0
+    Call UpdateModelview
+End If
+If key(&H51) <> 0 Then  ' Q – roll clockwise (around Y)
+    kq = QuatFromAxisAngle(0, 1, 0, dAngle)
+    Call MulQbyQ(kq, qModelRot, qModelRot)
+    isInitialPosition = 0
+    Call UpdateModelview
+End If
+If key(&H45) <> 0 Then  ' E – roll counter-clockwise
+    kq = QuatFromAxisAngle(0, 1, 0, -dAngle)
+    Call MulQbyQ(kq, qModelRot, qModelRot)
+    isInitialPosition = 0
+    Call UpdateModelview
+End If
+
+'Camera movement using quaternion orientation
+If key(&H26) <> 0 Then 'Up Arrow – move forward
+    stepVec.x = 0: stepVec.y = 0: stepVec.z = -dStep
+    stepVec = RotateVectorByQuaternion(stepVec, qCamRot)
+    camPos.x = camPos.x + stepVec.x
+    camPos.y = camPos.y + stepVec.y
+    camPos.z = camPos.z + stepVec.z
+    isInitialPosition = 0
+    Call UpdateModelview
+End If
+If key(&H28) <> 0 Then 'Down Arrow – move backward
+    stepVec.x = 0: stepVec.y = 0: stepVec.z = dStep
+    stepVec = RotateVectorByQuaternion(stepVec, qCamRot)
+    camPos.x = camPos.x + stepVec.x
+    camPos.y = camPos.y + stepVec.y
+    camPos.z = camPos.z + stepVec.z
+    isInitialPosition = 0
+    Call UpdateModelview
+End If
+If key(&H25) <> 0 Then 'Left Arrow – strafe left
+    stepVec.x = -dStep: stepVec.y = 0: stepVec.z = 0
+    stepVec = RotateVectorByQuaternion(stepVec, qCamRot)
+    camPos.x = camPos.x + stepVec.x
+    camPos.y = camPos.y + stepVec.y
+    camPos.z = camPos.z + stepVec.z
+    isInitialPosition = 0
+    Call UpdateModelview
+End If
+If key(&H27) <> 0 Then 'Right Arrow – strafe right
+    stepVec.x = dStep: stepVec.y = 0: stepVec.z = 0
+    stepVec = RotateVectorByQuaternion(stepVec, qCamRot)
+    camPos.x = camPos.x + stepVec.x
+    camPos.y = camPos.y + stepVec.y
+    camPos.z = camPos.z + stepVec.z
+    isInitialPosition = 0
+    Call UpdateModelview
+End If
+If key(&H21) <> 0 Then 'Page Up – move up
+    stepVec.x = 0: stepVec.y = dStep: stepVec.z = 0
+    stepVec = RotateVectorByQuaternion(stepVec, qCamRot)
+    camPos.x = camPos.x + stepVec.x
+    camPos.y = camPos.y + stepVec.y
+    camPos.z = camPos.z + stepVec.z
+    isInitialPosition = 0
+    Call UpdateModelview
+End If
+If key(&H22) <> 0 Then 'Page Down – move down
+    stepVec.x = 0: stepVec.y = -dStep: stepVec.z = 0
+    stepVec = RotateVectorByQuaternion(stepVec, qCamRot)
+    camPos.x = camPos.x + stepVec.x
+    camPos.y = camPos.y + stepVec.y
+    camPos.z = camPos.z + stepVec.z
+    isInitialPosition = 0
+    Call UpdateModelview
+End If
+End Function
+
+Function QuatFromAxisAngle(ByVal ax As Single, ByVal ay As Single, ByVal az As Single, ByVal angleDeg As Single) As QUATERNION
+    Dim radHalf As Single
+    radHalf = (angleDeg * 0.5) * PI_OVER_180   ' PI_OVER_180 = 0.0174532925
+    Dim s As Single
+    s = Sin(radHalf)
+    QuatFromAxisAngle.x = ax * s
+    QuatFromAxisAngle.y = ay * s
+    QuatFromAxisAngle.z = az * s
+    QuatFromAxisAngle.w = Cos(radHalf)
+End Function
+
+Function RotateVectorByQuaternion(ByRef v As POINT3D, ByRef q As QUATERNION) As POINT3D
+    ' Rotates vector v by quaternion q (assuming q is unit)
+    ' Result = q * v * conj(q)
+    Dim t As POINT3D, u As POINT3D
+    t.x = 2 * (q.y * v.z - q.z * v.y)
+    t.y = 2 * (q.z * v.x - q.x * v.z)
+    t.z = 2 * (q.x * v.y - q.y * v.x)
+    
+    u.x = v.x + q.w * t.x + (q.y * t.z - q.z * t.y)
+    u.y = v.y + q.w * t.y + (q.z * t.x - q.x * t.z)
+    u.z = v.z + q.w * t.z + (q.x * t.y - q.y * t.x)
+    
+    RotateVectorByQuaternion = u
+End Function
+
+Function RefreshStatus()
+    Call glGetFloatv(GL_MODELVIEW_MATRIX, lp_mtxModelViewBuffer)
+    szAxisXX = "x.x=" & format(mtxModelViewBuffer(0), "0.000")
+    szAxisYX = "y.x=" & format(mtxModelViewBuffer(1), "0.000")
+    szAxisZX = "z.x=" & format(mtxModelViewBuffer(2), "0.000")
+    szAxisXY = "x.y=" & format(mtxModelViewBuffer(4), "0.000")
+    szAxisYY = "y.y=" & format(mtxModelViewBuffer(5), "0.000")
+    szAxisZY = "z.y=" & format(mtxModelViewBuffer(6), "0.000")
+    szAxisXZ = "x.z=" & format(mtxModelViewBuffer(8), "0.000")
+    szAxisYZ = "y.z=" & format(mtxModelViewBuffer(9), "0.000")
+    szAxisZZ = "z.z=" & format(mtxModelViewBuffer(10), "0.000")
+    szAxisXW = "x.w=" & format(mtxModelViewBuffer(12), "0.000")
+    szAxisYW = "y.w=" & format(mtxModelViewBuffer(13), "0.000")
+    szAxisZW = "z.w=" & format(mtxModelViewBuffer(14), "0.000")
+
+    lpszAxisXX = StrPtr(szAxisXX)
+    lpszAxisYX = StrPtr(szAxisYX)
+    lpszAxisZX = StrPtr(szAxisZX)
+    lpszAxisXY = StrPtr(szAxisXY)
+    lpszAxisYY = StrPtr(szAxisYY)
+    lpszAxisZY = StrPtr(szAxisZY)
+    lpszAxisXZ = StrPtr(szAxisXZ)
+    lpszAxisYZ = StrPtr(szAxisYZ)
+    lpszAxisZZ = StrPtr(szAxisZZ)
+    lpszAxisXW = StrPtr(szAxisXW)
+    lpszAxisYW = StrPtr(szAxisYW)
+    lpszAxisZW = StrPtr(szAxisZW)
+
+    Call SendMessageW(hwndStatusBar, SB_SETTEXTW, 0, lpszAxisXX)
+    Call SendMessageW(hwndStatusBar, SB_SETTEXTW, 1, lpszAxisYX)
+    Call SendMessageW(hwndStatusBar, SB_SETTEXTW, 2, lpszAxisZX)
+    Call SendMessageW(hwndStatusBar, SB_SETTEXTW, 3, lpszAxisXY)
+    Call SendMessageW(hwndStatusBar, SB_SETTEXTW, 4, lpszAxisYY)
+    Call SendMessageW(hwndStatusBar, SB_SETTEXTW, 5, lpszAxisZY)
+    Call SendMessageW(hwndStatusBar, SB_SETTEXTW, 6, lpszAxisXZ)
+    Call SendMessageW(hwndStatusBar, SB_SETTEXTW, 7, lpszAxisYZ)
+    Call SendMessageW(hwndStatusBar, SB_SETTEXTW, 8, lpszAxisZZ)
+    Call SendMessageW(hwndStatusBar, SB_SETTEXTW, 9, lpszAxisXW)
+    Call SendMessageW(hwndStatusBar, SB_SETTEXTW, 10, lpszAxisYW)
+    Call SendMessageW(hwndStatusBar, SB_SETTEXTW, 11, lpszAxisZW)
+End Function
+
+Function DrawAxes()
+Call glDisable(GL_LIGHTING)
+Call glBegin(GL_LINES)
+    Call glColor3f(1, 0, 0) 'Red
+    Call glVertex3f(-7000, 0, 0)
+    Call glVertex3f(7000, 0, 0)
+    Call glVertex3f(6900, -50, 0) 'Arrow
+    Call glVertex3f(7000, 0, 0)
+    Call glVertex3f(7000, 0, 0)
+    Call glVertex3f(6900, 50, 0)
+    Call glColor3f(0, 1, 0) 'Green
+    Call glVertex3f(0, -7000, 0)
+    Call glVertex3f(0, 7000, 0)
+    Call glVertex3f(-50, 6900, 0) 'Arrow
+    Call glVertex3f(0, 7000, 0)
+    Call glVertex3f(0, 7000, 0)
+    Call glVertex3f(50, 6900, 0)
+    Call glColor3f(0, 0, 1) 'Blue
+    Call glVertex3f(0, 0, 0)
+    Call glVertex3f(0, 0, 1000)
+    Call glVertex3f(-50, 0, 900) 'Arrow
+    Call glVertex3f(0, 0, 1000)
+    Call glVertex3f(0, 0, 1000)
+    Call glVertex3f(50, 0, 900)
+Call glEnd
+End Function
+
+Function DrawObject()
+Dim x As Byte, y As Byte
+
+Call glEnable(GL_LIGHTING)
+Call glEnable(GL_LIGHT0)
+Call glLightfv(GL_LIGHT0, GL_AMBIENT, lp_light_ambient)
+Call glLightfv(GL_LIGHT0, GL_POSITION, lp_light_position)
+Call glEnable(GL_LIGHT1)
+Call glLightfv(GL_LIGHT1, GL_DIFFUSE, lp_light_diffuse)
+Call glLightfv(GL_LIGHT1, GL_POSITION, lp_light_position)
+
+Call glMatrixMode(GL_MODELVIEW)
+Call glPushMatrix
+Call glTranslatef(-5875, -5875, 0)
+For y = 0 To 47
+    Call glPushMatrix
+    For x = 0 To 47
+        Select Case RBMK(x, y)
+            Case 1
+                'Call glColor3f(0.75, 0.75, 0.75) 'Gray
+                'Call glMaterialfv(GL_FRONT, GL_SPECULAR, lp_matGraySpecular)
+                'Call glMaterialfv(GL_FRONT, GL_SHININESS, lp_matGrayShininess)
+                Call glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, lp_matGrayAmbDiff)
+                'Call glMaterialfv(GL_FRONT, GL_EMISSION, lp_matBlueEmission)
+                Call DrawCap
+            Case 2
+                'Call glColor3f(0.15, 0.75, 0.15) 'Green
+                'Call glMaterialfv(GL_FRONT, GL_SPECULAR, lp_matGreenSpecular)
+                'Call glMaterialfv(GL_FRONT, GL_SHININESS, lp_matGreenShininess)
+                Call glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, lp_matGreenAmbDiff)
+                Call DrawCap
+            Case 3
+                'Call glColor3f(0.85, 0.85, 0.15) 'Yellow
+                'Call glMaterialfv(GL_FRONT, GL_SPECULAR, lp_matYellowSpecular)
+                'Call glMaterialfv(GL_FRONT, GL_SHININESS, lp_matYellowShininess)
+                Call glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, lp_matYellowAmbDiff)
+                Call DrawCap
+            Case 4
+                'Call glColor3f(0.85, 0.15, 0.15) 'Red
+                'Call glMaterialfv(GL_FRONT, GL_SPECULAR, lp_matRedSpecular)
+                'Call glMaterialfv(GL_FRONT, GL_SHININESS, lp_matRedShininess)
+                Call glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, lp_matRedAmbDiff)
+                Call DrawCap
+            Case 5
+                'Call glColor3f(0.25, 0.4, 0.85) 'Blue
+                'Call glMaterialfv(GL_FRONT, GL_SPECULAR, lp_matBlueSpecular)
+                'Call glMaterialfv(GL_FRONT, GL_SHININESS, lp_matBlueShininess)
+                Call glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, lp_matBlueAmbDiff)
+                Call DrawCap
+        End Select
+        Call glTranslatef(250, 0, 0)
+    Next x
+    Call glPopMatrix
+    Call glTranslatef(0, 250, 0)
+Next y
+Call glPopMatrix
+End Function
+
+Function DrawCap()
+'Call glPushMatrix
+'Call glRotatef(CSng(5 * Rnd - 2.5), 0, 0, 1)
+'Call glTranslatef(0, 0, CSng(10 * Rnd))
+Call glBegin(GL_QUADS)
+    v3Normal.x = 0#
+    v3Normal.y = 0#
+    v3Normal.z = 1#
+    Call glNormal3fv(lpNormal) '0 - Top
+    Call glVertex3f(110, 110, 0)
+    Call glVertex3f(-110, 110, 0)
+    Call glVertex3f(-110, -110, 0)
+    Call glVertex3f(110, -110, 0)
+    v3Normal.x = 0#
+    v3Normal.y = 0.7071068 '1/Sqr(2)
+    v3Normal.z = 0.7071068
+    Call glNormal3fv(lpNormal) '1 - North
+    Call glVertex3f(120, 120, -10)
+    Call glVertex3f(-120, 120, -10)
+    Call glVertex3f(-110, 110, 0)
+    Call glVertex3f(110, 110, 0)
+    v3Normal.x = -0.7071068
+    v3Normal.y = 0
+    v3Normal.z = 0.7071068
+    Call glNormal3fv(lpNormal) '2 - West
+    Call glVertex3f(-120, 120, -10)
+    Call glVertex3f(-120, -120, -10)
+    Call glVertex3f(-110, -110, 0)
+    Call glVertex3f(-110, 110, 0)
+    v3Normal.x = 0#
+    v3Normal.y = -0.7071068
+    v3Normal.z = 0.7071068
+    Call glNormal3fv(lpNormal) '3 - South
+    Call glVertex3f(-120, -120, -10)
+    Call glVertex3f(120, -120, -10)
+    Call glVertex3f(110, -110, 0)
+    Call glVertex3f(-110, -110, 0)
+    v3Normal.x = 0.7071068
+    v3Normal.y = 0#
+    v3Normal.z = 0.7071068
+    Call glNormal3fv(lpNormal) '4 - East
+    Call glVertex3f(120, -120, -10)
+    Call glVertex3f(120, 120, -10)
+    Call glVertex3f(110, 110, 0)
+    Call glVertex3f(110, -110, 0)
+Call glEnd
+'Call glPopMatrix
+End Function
+
+
+
+
+
+
